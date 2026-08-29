@@ -19,6 +19,7 @@ class SessionStatus(str, Enum):
 
     IDLE = "idle"
     RECORDING = "recording"
+    RETRYING = "retrying"
     STOPPED = "stopped"
     ERROR = "error"
 

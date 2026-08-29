@@ -64,10 +64,10 @@ Scope: Windows MVP in `latchnote-app/`. The first usable slice is system audio â
 
 ## Milestone 6 â€” Minimal Tray App
 
-- [ ] Add a tray menu with Start Session, Stop Session, and Quit.
-- [ ] Show clear state: idle, recording, retrying, or error.
-- [ ] Prevent a second session from starting while one is active.
-- [ ] Stop safely on exit and retain recoverable data.
+- [x] Add a tray menu with Start Session, Stop Session, and Quit.
+- [x] Show clear state: idle, recording, retrying, or error.
+- [x] Prevent a second session from starting while one is active.
+- [x] Stop safely on exit and retain recoverable data.
 
 **Done when:** a non-technical user can run a full session without using the terminal.
 

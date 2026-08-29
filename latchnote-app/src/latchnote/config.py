@@ -1,7 +1,7 @@
 """Local application configuration."""
 
 from dataclasses import dataclass
-from os import getenv
+from os import environ, getenv
 from pathlib import Path
 
 
@@ -18,6 +18,7 @@ class Settings:
 
 def load_settings() -> Settings:
     """Load settings without writing or logging credentials."""
+    _load_dotenv(Path(".env"))
     return Settings(
         notes_dir=Path(getenv("LATCHNOTE_NOTES_DIR", "notes")),
         data_dir=Path(getenv("LATCHNOTE_DATA_DIR", "data")),
@@ -25,3 +26,13 @@ def load_settings() -> Settings:
         anthropic_api_key=getenv("ANTHROPIC_API_KEY") or None,
         anthropic_model=getenv("ANTHROPIC_MODEL", "claude-sonnet-5"),
     )
+
+
+def _load_dotenv(path: Path) -> None:
+    """Load simple ``KEY=value`` lines without overriding real environment values."""
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        key, separator, value = line.partition("=")
+        if separator and key and not key.startswith("#"):
+            environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))

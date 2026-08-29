@@ -79,6 +79,11 @@ class WasapiLoopbackCapture:
         LOGGER.info("Capturing default Windows audio to %s", self.path)
         return self.path
 
+    def set_chunk_handler(self, on_chunk: AudioChunkHandler) -> None:
+        """Set the live-audio consumer after the native format is known."""
+        with self._lock:
+            self._on_chunk = on_chunk
+
     def stop(self) -> None:
         """Stop capture and close the WAV file without discarding it."""
         with self._lock:
