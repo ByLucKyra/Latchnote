@@ -103,6 +103,11 @@ class SessionOrchestrator:
         if chunk is not None:
             self._schedule(chunk)
 
+    def add_manual_note(self, text: str, at: datetime | None = None) -> None:
+        """Persist a user micro-note at its current session timestamp."""
+        recorded_at = at or datetime.now()
+        self._writer.append_manual_note(text, self._session.timestamp(recorded_at))
+
     def finish(self, at: datetime | None = None) -> None:
         """Schedule the final partial chunk and wait briefly for active requests."""
         recorded_at = at or datetime.now()

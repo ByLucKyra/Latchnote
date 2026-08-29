@@ -54,11 +54,11 @@ Scope: Windows MVP in `latchnote-app/`. The first usable slice is system audio �
 
 ## Milestone 5 — Manual Micro-Notes
 
-- [ ] Register `Ctrl+Space` as the default global hotkey.
-- [ ] Show a small PySide6 text input near the cursor.
-- [ ] Submit the note with its current relative timestamp.
-- [ ] Render manual notes distinctly in Markdown using `📌`.
-- [ ] Close the popup on submit or `Esc`.
+- [x] Register `Ctrl+Space` as the default global hotkey.
+- [x] Show a small PySide6 text input near the cursor.
+- [x] Submit the note with its current relative timestamp.
+- [x] Render manual notes distinctly in Markdown using `📌`.
+- [x] Close the popup on submit or `Esc`.
 
 **Done when:** a note can be captured while a browser video retains focus and it appears in the same session file.
 
