@@ -33,11 +33,11 @@ Scope: Windows MVP in `latchnote-app/`. The first usable slice is system audio â
 
 ## Milestone 3 â€” Live Speech-to-Text
 
-- [ ] Send captured audio to Deepgram streaming.
-- [ ] Handle interim and final transcript events.
+- [x] Send captured audio to Deepgram streaming.
+- [x] Handle interim and final transcript events.
 - [ ] Write final transcript segments to Markdown as they arrive.
-- [ ] Support automatic language detection for Indonesian/English mixed speech.
-- [ ] On connection failure, retain local audio and expose a retryable error state.
+- [x] Support automatic language detection for Indonesian/English mixed speech.
+- [x] On connection failure, retain local audio and expose a retryable error state.
 - [ ] Test with a 30-minute mixed-language course recording.
 
 **Done when:** browser audio becomes timestamped Markdown transcript with a maximum practical delay of 10 seconds.
