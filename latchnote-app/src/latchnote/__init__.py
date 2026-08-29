@@ -1,0 +1,1 @@
+"""Latchnote desktop application."""
