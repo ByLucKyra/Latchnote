@@ -35,7 +35,7 @@ Scope: Windows MVP in `latchnote-app/`. The first usable slice is system audio â
 
 - [x] Send captured audio to Deepgram streaming.
 - [x] Handle interim and final transcript events.
-- [ ] Write final transcript segments to Markdown as they arrive.
+- [x] Write final transcript segments to Markdown as they arrive.
 - [x] Support automatic language detection for Indonesian/English mixed speech.
 - [x] On connection failure, retain local audio and expose a retryable error state.
 - [ ] Test with a 30-minute mixed-language course recording.
@@ -44,11 +44,11 @@ Scope: Windows MVP in `latchnote-app/`. The first usable slice is system audio â
 
 ## Milestone 4 â€” Structured Notes
 
-- [ ] Accumulate only new final transcript text in 2â€“3 minute chunks.
-- [ ] Send each chunk to Claude with a prompt that preserves facts, terms, and identifiers.
-- [ ] Append structured bullets at the chunk start timestamp.
-- [ ] Preserve raw transcript if structuring fails and retry later.
-- [ ] Add a small check proving chunks are not sent twice.
+- [x] Accumulate only new final transcript text in 2â€“3 minute chunks.
+- [x] Send each chunk to Claude with a prompt that preserves facts, terms, and identifiers.
+- [x] Append structured bullets at the chunk start timestamp.
+- [x] Preserve raw transcript if structuring fails and retry later.
+- [x] Add a small check proving chunks are not sent twice.
 
 **Done when:** one completed session produces chronological, structured Markdown notes without invented content.
 
