@@ -23,10 +23,10 @@ Scope: Windows MVP in `latchnote-app/`. The first usable slice is system audio â
 
 ## Milestone 2 â€” WASAPI Audio Capture
 
-- [ ] Enumerate and select the default Windows output device.
-- [ ] Capture system audio through WASAPI loopback.
-- [ ] Persist audio incrementally to temporary local storage for recovery.
-- [ ] Implement start, stop, and safe cleanup for one session.
+- [x] Enumerate and select the default Windows output device.
+- [x] Capture system audio through WASAPI loopback.
+- [x] Persist audio incrementally to temporary local storage for recovery.
+- [x] Implement start, stop, and safe cleanup for one session.
 - [ ] Test a 30-minute capture with no crash and a playable recovery recording.
 
 **Done when:** a user can start and stop a session and obtain a local recording of browser/course audio.
