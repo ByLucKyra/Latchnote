@@ -37,12 +37,12 @@ class SessionController:
     @property
     def can_start(self) -> bool:
         """Return whether a new recording may begin."""
-        return self.status is not SessionStatus.RECORDING
+        return self._capture is None
 
     @property
     def can_stop(self) -> bool:
         """Return whether an active recording may stop."""
-        return self.status is SessionStatus.RECORDING
+        return self._capture is not None
 
     def start_session(self) -> None:
         """Start audio capture, live transcription, and local note writing."""
@@ -64,6 +64,8 @@ class SessionController:
         capture = WasapiLoopbackCapture(self.settings.data_dir)
         try:
             capture.start(f"{session.started_at:%Y%m%d-%H%M%S}")
+            self._capture = capture
+            self._orchestrator = orchestrator
             if capture.format is None:
                 raise AudioCaptureError("WASAPI did not provide an audio format.")
             stt = DeepgramSttClient(
@@ -71,16 +73,15 @@ class SessionController:
                 capture.format,
                 lambda segment: orchestrator.add_final_transcript(segment.text),
             )
-            capture.set_chunk_handler(stt.submit_audio)
             stt.start()
+            capture.set_chunk_handler(stt.submit_audio)
         except (AudioCaptureError, SttError) as error:
-            capture.stop()
+            if self._capture is None:
+                capture.stop()
             self._set_error(str(error))
             return
 
-        self._capture = capture
         self._stt = stt
-        self._orchestrator = orchestrator
         self.status = SessionStatus.RECORDING
         self.last_error = None
         LOGGER.info("Session started: %s", writer.path)
