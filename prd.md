@@ -117,12 +117,15 @@ A close competitor identified during market research, not previously scoped:
 - Stream captured audio to a speech-to-text service in real time or near-real-time.
 - Handle mixed Indonesian/English speech without requiring the user to pre-select a language.
 - Attach a timestamp (relative to session start) to each transcript segment.
+- Display partial transcript with a target maximum delay of 10 seconds.
+- If the network or STT service fails, keep recording locally and retry without losing captured audio.
 
 ### 9.3 Note Structuring
-- Every ~2-3 minutes of speech, send the accumulated raw transcript to an LLM for restructuring into bullet-point notes.
+- Every ~2-3 minutes of speech, send only the new transcript chunk to an LLM for restructuring into bullet-point notes.
 - Preserve technical terms, proper nouns, and code identifiers exactly.
 - Strip filler words and false starts.
 - Never introduce information not present in the source transcript.
+- If structuring fails, retain the raw transcript and retry later; never discard the chunk.
 
 ### 9.4 Manual Micro-Notes
 - Global hotkey (default `Ctrl+Space`) works regardless of which window has focus.
@@ -135,7 +138,9 @@ A close competitor identified during market research, not previously scoped:
 - Write notes to a local `.md` file per session.
 - File name includes date + session title.
 - AI-structured notes and manual micro-notes appear interleaved in chronological order.
+- Use `[HH:MM:SS]` relative timestamps; AI notes use the chunk start time and manual notes use the hotkey submission time.
 - Output is plain Markdown, readable in Obsidian, Notion, or any text editor without conversion.
+- Audio and transcript may be sent temporarily to configured third-party APIs for processing; final notes remain local and MVP has no cloud sync.
 
 ## 10. Non-Functional Requirements
 
@@ -147,6 +152,9 @@ A close competitor identified during market research, not previously scoped:
 | Portability | Output is plain Markdown, no proprietary formatting |
 | Privacy | Notes stored locally, not in third-party cloud, for MVP |
 | Cost control | Chunking avoids redundant API calls to STT/LLM providers |
+| Accuracy | Preserve key terms and identifiers; target at least 90% accuracy on important words in test recordings |
+| Resilience | Network/API failures do not cause data loss; captured audio and raw transcript remain recoverable |
+| Security | API keys come from local environment/configuration and are never committed to the repository |
 
 ## 11. Architecture Overview
 
@@ -161,6 +169,8 @@ Hotkey Listener (global hotkey + popup) ─────────────�
 ```
 
 **Stack:** Python, PyAudioWPatch, Deepgram streaming API, Anthropic Claude API, `keyboard` + PySide6, `pystray`, local Markdown storage.
+
+API keys are supplied through environment variables or a local untracked configuration file. They must never be written to notes, logs, screenshots, or source control.
 
 ## 12. Success Metrics (MVP validation)
 
@@ -179,6 +189,8 @@ Since this is a pre-revenue, dogfooding-stage MVP, success is qualitative first:
 | API cost scales unpredictably with session length | Chunk-based calls only; monitor usage during dogfooding |
 | Hotkey/popup feels disruptive rather than helpful | Keep popup minimal; get direct feedback in Week 4 dogfooding |
 | WASAPI loopback setup differs across Windows versions/audio drivers | Test on multiple machines during Week 4, not just the founder's own laptop |
+| Network/API failure causes missing notes | Persist captured audio/raw transcript locally, retry with bounded backoff, and export raw transcript if processing cannot recover |
+| API costs exceed expectations | Add a configurable session budget and stop optional structuring calls when the limit is reached |
 
 ## 14. Timeline
 
@@ -195,3 +207,4 @@ Since this is a pre-revenue, dogfooding-stage MVP, success is qualitative first:
 - Should the app auto-detect course/video title (e.g. from browser tab) to pre-fill the session name, or stay manual for MVP?
 - Post-MVP: is the next priority cloud sync, flashcard generation, or multi-language UI — pending dogfooding feedback?
 - Given the retention research in Section 3.2, should the micro-note interaction evolve beyond 1-3 keywords — e.g. occasionally prompting a short recall summary — to better match evidence on active engagement and retention? To be evaluated after Week 4 dogfooding.
+- Should local audio recordings be deleted automatically after successful transcription, or retained for recovery? Decide before implementation because this affects privacy and storage behavior.
