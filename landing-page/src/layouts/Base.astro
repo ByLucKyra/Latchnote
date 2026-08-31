@@ -1,0 +1,95 @@
+---
+import "../styles/global.css";
+import type { Copy, Lang } from "../content/copy";
+
+interface Props {
+  lang: Lang;
+  t: Copy;
+}
+
+const { lang, t } = Astro.props;
+const canonical = new URL(lang === "en" ? "/" : "/id/", Astro.site);
+---
+
+<!doctype html>
+<html lang={t.htmlLang} class="scroll-pt-24">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{t.meta.title}</title>
+    <meta name="description" content={t.meta.description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="en" href={new URL("/", Astro.site)} />
+    <link rel="alternate" hreflang="id" href={new URL("/id/", Astro.site)} />
+    <link rel="alternate" hreflang="x-default" href={new URL("/", Astro.site)} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={t.meta.title} />
+    <meta property="og:description" content={t.meta.description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d0b0a" media="(prefers-color-scheme: dark)" />
+    <meta name="generator" content={Astro.generator} />
+    <!-- Applied before first paint so a stored theme never flashes the wrong palette. -->
+    <script is:inline>
+      try {
+        const stored = localStorage.getItem("latchnote-theme");
+        if (stored === "light" || stored === "dark") {
+          document.documentElement.dataset.theme = stored;
+        }
+      } catch {
+        /* storage blocked; system preference still applies */
+      }
+    </script>
+  </head>
+  <body class="bg-bg text-ink antialiased">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-control focus:bg-accent focus:px-4 focus:py-2 focus:text-accent-fg"
+    >
+      Skip to content
+    </a>
+    <slot />
+
+    <script>
+      // Theme toggle. Kept in the layout so every page shares one implementation.
+      const root = document.documentElement;
+      const resolved = () =>
+        root.dataset.theme ??
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+      for (const button of document.querySelectorAll<HTMLElement>("[data-theme-toggle]")) {
+        button.addEventListener("click", () => {
+          const next = resolved() === "dark" ? "light" : "dark";
+          root.dataset.theme = next;
+          try {
+            localStorage.setItem("latchnote-theme", next);
+          } catch {
+            /* storage blocked; the choice lasts for this page view */
+          }
+        });
+      }
+
+      // Scroll reveal via IntersectionObserver. Content is armed only when the
+      // browser can animate it, so no-JS and reduced-motion users see everything.
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const targets = document.querySelectorAll<HTMLElement>("[data-reveal]");
+
+      if (!reduce.matches && "IntersectionObserver" in window) {
+        for (const element of targets) element.classList.add("is-armed");
+
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.classList.add("is-visible");
+              observer.unobserve(entry.target);
+            }
+          },
+          { rootMargin: "0px 0px -12% 0px", threshold: 0.15 },
+        );
+
+        for (const element of targets) observer.observe(element);
+      }
+    </script>
+  </body>
+</html>
