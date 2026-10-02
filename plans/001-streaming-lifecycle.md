@@ -1,6 +1,8 @@
 # Plan 001: Start dan Stop pipeline audio/STT dengan benar
 
-Status: TODO. Prioritas P0. Effort M. Risiko MED/HIGH pada shutdown. Kategori bug/integrasi. Dependensi: tidak ada. Planned at `37c7332`, 2 Oktober 2026.
+Status: REJECTED (Deepgram lifecycle; digantikan trial Whisper lokal). Keputusan tercatat di `plans/README.md`. Prioritas P0 historis. Planned at `37c7332`, 2 Oktober 2026.
+
+Implementasi Deepgram dalam dokumen ini tidak berlaku setelah perubahan arah produk pada 2 Oktober 2026. Jangan menjalankan langkah atau memasang kembali Deepgram. Lifecycle pengganti memakai Whisper lokal dan sudah memiliki pemeriksaan offline untuk drain antrean/tail, timeout yang dapat dicoba ulang, overflow yang melaporkan gap, urutan Stop capture sebelum decoder, deadlock lock callback, serta timestamp audio sumber di `latchnote-app/tests/test_local_pipeline.py`. Tes lokal saat rekonsiliasi: 16 passed. Uji perangkat audio nyata tetap belum dilakukan.
 
 ## Tujuan dan konteks
 
