@@ -1,43 +1,38 @@
-# Astro Starter Kit: Minimal
+# Latchnote landing page
 
-```sh
-npm create astro@latest -- --template minimal
+Astro + React page for the early Windows prototype, with English at `/` and
+Bahasa Indonesia at `/id/`. Product limits and setup are documented in
+[`../latchnote-app/README.md`](../latchnote-app/README.md).
+
+## Local preview
+
+Requires Node.js 22.12 or newer. From this directory:
+
+```powershell
+npm ci
+npm run dev
+npm run build
+npm run preview
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+The static build writes both routes to `dist/`. Check them in preview at narrow
+and wide widths, with reduced motion enabled, and by keyboard before publishing.
 
-## 🚀 Project Structure
+## Waitlist launch gate
 
-Inside of your Astro project, you'll see the following folders and files:
+The form stays closed unless `PUBLIC_WAITLIST_ENDPOINT` is set at build time.
+Configure only an operator-approved public HTTPS receiver; never put a secret
+in this browser-visible variable. The POST JSON contract is:
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+```json
+{"email":"person@example.com","pricing_preference":"undecided","language":"en"}
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+`pricing_preference` is `byo-key`, `monthly-hours`, or `undecided`; `language`
+is `en` or `id`. The receiver must validate and deduplicate submissions and
+return a successful 2xx only after saving. No endpoint is currently configured
+or externally tested, so the public waitlist must remain closed.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Canonical URLs and social previews are intentionally omitted until the owner
+chooses and verifies a domain and real share image. Do not deploy as launch-ready
+until those, the waitlist receiver, and the manual smoke checks are complete.

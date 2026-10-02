@@ -41,6 +41,7 @@ export default function HotkeyDemo({
   const [touch, setTouch] = useState(false);
   const started = useRef(Date.now());
   const input = useRef<HTMLInputElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
   const section = useRef<HTMLDivElement>(null);
   const inView = useRef(false);
 
@@ -69,9 +70,14 @@ export default function HotkeyDemo({
       if (event.key === "Escape" && open) {
         setOpen(false);
         setDraft("");
+        trigger.current?.focus();
         return;
       }
-      if (!inView.current || open) return;
+      const target = event.target;
+      const editing =
+        target instanceof HTMLElement &&
+        (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+      if (!inView.current || open || event.isComposing || editing) return;
       if (event.ctrlKey && event.code === "Space") {
         event.preventDefault();
         setOpen(true);
@@ -96,6 +102,7 @@ export default function HotkeyDemo({
       );
       setDraft("");
       setOpen(false);
+      trigger.current?.focus();
     },
     [draft],
   );
@@ -130,16 +137,13 @@ export default function HotkeyDemo({
         </div>
 
         <div className="mt-4 border-t border-line pt-4">
-          {touch ? (
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              className="w-full rounded-control bg-accent px-4 py-2.5 text-[14px] font-medium text-accent-fg transition-transform active:translate-y-px"
-            >
-              {labels.hintTouch}
-            </button>
-          ) : (
-            <p className="flex items-center justify-center gap-2 text-[13px] text-muted">
+          <button
+            ref={trigger}
+            type="button"
+            onClick={() => setOpen(true)}
+            className="mx-auto flex w-fit items-center justify-center gap-2 rounded-control px-3 py-2 text-[13px] text-muted transition-colors hover:bg-sunken focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            {touch ? labels.hintTouch : <>
               <kbd className="rounded border border-line bg-sunken px-1.5 py-0.5 font-mono text-[11px] text-ink">
                 Ctrl
               </kbd>
@@ -147,8 +151,8 @@ export default function HotkeyDemo({
                 Space
               </kbd>
               {labels.hintDesktop}
-            </p>
-          )}
+            </>}
+          </button>
         </div>
       </div>
 

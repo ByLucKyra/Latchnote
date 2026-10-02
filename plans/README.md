@@ -65,7 +65,7 @@ Path Python di tabel relatif ke `latchnote-app/src/latchnote/`; path frontend re
 | [001](001-streaming-lifecycle.md) | STT Deepgram start/finalize/stop | P0 | M | Tidak ada | REJECTED: diganti trial Whisper lokal; lihat README desktop |
 | [002](002-storage-and-structuring.md) | Sesi unik, recovery durable, Markdown kronologis, AI worker terkendali | P0/P1 | L | Trial Whisper lokal | DONE: 23 tes automated-verified; provider nyata dan sesi hardware belum diuji |
 | [003](003-recovery-and-desktop-ux.md) | Error/backlog terlihat, recovery usable, transcript preview dan setup | P1 | L | Trial Whisper lokal, 002 | IN PROGRESS: config/recovery/tray automated; interim captions dan hardware smoke belum |
-| [004](004-waitlist-readiness.md) | Landing page jujur, accessible, waitlist terverifikasi | P1/P2 | M | Independen untuk copy/UI; klaim fitur menunggu 003 | TODO |
+| [004](004-waitlist-readiness.md) | Landing page jujur, accessible, waitlist terverifikasi | P1/P2 | M | Independen untuk copy/UI; klaim fitur menunggu 003 | IN PROGRESS: copy, fallback, dokumentasi, build; browser check/domain/endpoint belum |
 | [005](005-validation-and-release.md) | Bukti tiga pengguna dan release checklist; keputusan pricing berbasis biaya | P1 | L | 001–003; 004 untuk distribusi waitlist | TODO |
 
 Status yang diperbolehkan: TODO, IN PROGRESS, DONE, BLOCKED (sertakan sebab), REJECTED (sertakan alasan). Setelah perubahan arah, lanjutkan benchmark Whisper pada hardware target sebelum durability 002; jangan menjalankan plan Deepgram yang sudah ditolak. 004 boleh paralel selama copy tidak menjanjikan fitur yang belum lolos validasi.

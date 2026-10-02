@@ -3,9 +3,9 @@ export type Lang = "en" | "id";
 const en = {
   htmlLang: "en",
   meta: {
-    title: "Latchnote - live course audio into local Markdown notes",
+    title: "Latchnote - local course audio into Markdown notes",
     description:
-      "A Windows companion that transcribes what you are watching, structures it into Markdown, and leaves room for your own notes with one hotkey.",
+      "A Windows prototype that transcribes system audio locally and saves Markdown notes, with optional AI formatting and personal notes.",
   },
   nav: {
     how: "How it works",
@@ -21,10 +21,10 @@ const en = {
   hero: {
     eyebrow: "Early access",
     headlineTop: "Watch the course.",
-    headlineBottom: "The notes write themselves.",
-    sub: "Latchnote listens to your Windows audio, transcribes it live, and saves structured Markdown that stays on your machine.",
+    headlineBottom: "Keep your notes close.",
+    sub: "Latchnote captures Windows system audio, transcribes it locally, and saves Markdown on your machine. AI formatting is optional.",
     ctaPrimary: "Join the waitlist",
-    ctaSecondary: "See a real session",
+    ctaSecondary: "See sample notes",
   },
   demo: {
     sessionTitle: "Backend Fundamentals",
@@ -34,7 +34,7 @@ const en = {
     structured: "Structured notes",
     manual: "Your note",
     replay: "Replay",
-    caption: "A simulation of a running session, at the speed it actually appears.",
+    caption: "Illustrative simulation, accelerated; not a live recording or product output.",
   },
   problem: {
     heading: "Pausing to write means losing the thread.",
@@ -42,7 +42,6 @@ const en = {
       "You can stop every minute to type, and lose the flow of the lecture. Or you can stay with the video, and lose most of what was said.",
     body2:
       "Tools that summarise a video after you finish do not help while you are still watching. Meeting overlays were built for job interviews, not for studying alone.",
-    imageAlt: "A student watching a recorded lecture on a laptop at night",
   },
   how: {
     heading: "What happens during a session",
@@ -53,11 +52,11 @@ const en = {
       },
       {
         name: "Transcribe",
-        body: "The audio streams to Deepgram and comes back as timestamped text, with Indonesian and English detected automatically.",
+        body: "Local Whisper transcribes captured system audio. Language detection can be tested with multilingual models; quality is still being validated.",
       },
       {
         name: "Structure",
-        body: "Every two to three minutes the new transcript goes to Claude, which turns it into bullets without inventing anything.",
+        body: "Optional AI formatting sends transcript text—not audio—to a configured OpenAI-compatible provider. Output still needs review.",
       },
       {
         name: "Save",
@@ -68,9 +67,8 @@ const en = {
   hotkey: {
     heading: "One key. Your own words.",
     body: "Full automation takes you out of your own notes. Latchnote leaves a small opening instead: press Ctrl+Space, type two words, keep watching.",
-    evidence:
-      "Karpicke and Roediger (2008) measured 80% retention after a week from active recall, against 36% from passive re-reading.",
-    hintDesktop: "Press Ctrl+Space to try it",
+    evidence: "Adding your own note is an interaction example, not a claim about learning outcomes.",
+    hintDesktop: "Try the note demo (Ctrl+Space)",
     hintTouch: "Tap to try it",
     inputLabel: "Micro-note",
     inputPlaceholder: "two or three words",
@@ -109,7 +107,7 @@ const en = {
   },
   waitlist: {
     heading: "Pricing is not decided yet.",
-    body: "Latchnote is being tested on real study sessions right now. Every hour of audio costs real money in transcription and AI, so the plan has to match how people actually use it.",
+    body: "Latchnote is an early prototype. Pricing is still undecided, and this short survey helps us understand which model may fit future use.",
     pollQuestion: "Which would you rather pay for?",
     pollOptions: [
       "I bring my own API keys and pay once for the app",
@@ -126,15 +124,14 @@ const en = {
     errorEmail: "Please enter a valid email address.",
     errorPoll: "Pick the option closest to what you would do.",
     privacy: "One email when early access opens. Nothing else.",
-    unconfigured:
-      "The waitlist endpoint is not configured yet. Set PUBLIC_WAITLIST_ENDPOINT before deploying.",
+    unconfigured: "The waitlist is not open yet. Please check back later.",
   },
   faq: {
     heading: "Questions worth asking first",
     items: [
       {
         q: "Does my audio leave my computer?",
-        a: "Yes, while a session is running. Audio is streamed to Deepgram for transcription, and the transcript text is sent to Claude for structuring. The finished notes are written to your disk and are not synced anywhere.",
+        a: "Audio is captured and transcribed locally with Whisper. If you enable optional AI formatting, transcript text is sent to your configured provider; recordings are not sent for that step. Notes are written to disk.",
       },
       {
         q: "Is it Windows only?",
@@ -142,11 +139,11 @@ const en = {
       },
       {
         q: "Does it handle mixed Indonesian and English?",
-        a: "That is the case it was built for. Language detection runs automatically, so you never pick a language before a session starts.",
+        a: "The app uses multilingual Whisper models, but mixed Indonesian/English accuracy has not yet been validated across real sessions.",
       },
       {
         q: "What happens if my connection drops?",
-        a: "The recording keeps running and stays on disk. The tray icon reports the error, and the raw audio remains available, so nothing already captured is lost.",
+        a: "The app retains a WAV recovery file and journals known gaps, but recovery and long-session behavior still need real-device validation.",
       },
       {
         q: "Can I use it for meetings?",
@@ -154,7 +151,7 @@ const en = {
       },
       {
         q: "When can I try it?",
-        a: "The desktop app runs end to end today and is being validated on real course sessions. Early access goes to the waitlist first.",
+        a: "It is an early prototype. Core behavior and real-device reliability are still being validated; the waitlist is not open yet.",
       },
     ],
   },
@@ -170,9 +167,9 @@ export type Copy = typeof en;
 const id: Copy = {
   htmlLang: "id",
   meta: {
-    title: "Latchnote - audio kelas jadi catatan Markdown di komputermu",
+    title: "Latchnote - audio kelas jadi catatan Markdown lokal",
     description:
-      "Aplikasi Windows yang mentranskrip apa yang sedang kamu tonton, menyusunnya jadi Markdown, dan menyisakan ruang untuk catatanmu sendiri lewat satu hotkey.",
+      "Prototipe Windows yang mentranskrip audio sistem secara lokal dan menyimpan catatan Markdown, dengan format AI opsional.",
   },
   nav: {
     how: "Cara kerja",
@@ -188,10 +185,10 @@ const id: Copy = {
   hero: {
     eyebrow: "Akses awal",
     headlineTop: "Fokus ke materinya.",
-    headlineBottom: "Catatannya jalan sendiri.",
-    sub: "Latchnote mendengarkan audio Windows kamu, mentranskripnya langsung, lalu menyimpan Markdown terstruktur yang tetap ada di komputermu.",
+    headlineBottom: "Simpan catatanmu sendiri.",
+    sub: "Latchnote merekam audio sistem Windows, mentranskripnya secara lokal, lalu menyimpan Markdown di komputermu. Pemformatan AI opsional.",
     ctaPrimary: "Gabung waitlist",
-    ctaSecondary: "Lihat sesi aslinya",
+    ctaSecondary: "Lihat contoh catatan",
   },
   demo: {
     sessionTitle: "Backend Fundamentals",
@@ -201,7 +198,7 @@ const id: Copy = {
     structured: "Catatan terstruktur",
     manual: "Catatanmu",
     replay: "Ulangi",
-    caption: "Simulasi sesi yang sedang berjalan, dengan kecepatan sebagaimana aslinya muncul.",
+    caption: "Simulasi ilustratif yang dipercepat; bukan rekaman langsung atau hasil produk.",
   },
   problem: {
     heading: "Berhenti buat nulis berarti kehilangan alurnya.",
@@ -209,7 +206,6 @@ const id: Copy = {
       "Kamu bisa berhenti tiap menit buat ngetik, dan kehilangan alur kelasnya. Atau tetap ikut videonya, dan kehilangan sebagian besar yang barusan dijelaskan.",
     body2:
       "Alat yang merangkum video setelah selesai tidak menolong saat kamu masih nonton. Overlay meeting dibuat untuk wawancara kerja, bukan untuk belajar sendirian.",
-    imageAlt: "Mahasiswa menonton rekaman kuliah di laptop pada malam hari",
   },
   how: {
     heading: "Yang terjadi selama satu sesi",
@@ -220,11 +216,11 @@ const id: Copy = {
       },
       {
         name: "Transkrip",
-        body: "Audionya dikirim ke Deepgram dan kembali jadi teks bertimestamp, dengan bahasa Indonesia dan Inggris terdeteksi otomatis.",
+        body: "Whisper lokal mentranskrip audio sistem. Deteksi bahasa dapat diuji dengan model multilingual; kualitasnya masih divalidasi.",
       },
       {
         name: "Susun",
-        body: "Setiap dua sampai tiga menit, transkrip barunya dikirim ke Claude untuk diubah jadi poin-poin tanpa menambah hal yang tidak diucapkan.",
+        body: "Pemformatan AI opsional mengirim teks transkrip—bukan audio—ke penyedia OpenAI-compatible yang dikonfigurasi. Hasilnya tetap perlu ditinjau.",
       },
       {
         name: "Simpan",
@@ -235,9 +231,8 @@ const id: Copy = {
   hotkey: {
     heading: "Satu tombol. Kata-katamu sendiri.",
     body: "Otomatisasi penuh justru mengeluarkan kamu dari catatanmu sendiri. Latchnote menyisakan celah kecil: tekan Ctrl+Space, ketik dua kata, lanjut nonton.",
-    evidence:
-      "Karpicke dan Roediger (2008) mengukur retensi 80% setelah seminggu dari active recall, dibanding 36% dari sekadar baca ulang.",
-    hintDesktop: "Tekan Ctrl+Space untuk mencobanya",
+    evidence: "Menambahkan catatan sendiri adalah contoh interaksi, bukan klaim hasil belajar.",
+    hintDesktop: "Coba demo catatan (Ctrl+Space)",
     hintTouch: "Ketuk untuk mencobanya",
     inputLabel: "Catatan singkat",
     inputPlaceholder: "dua atau tiga kata",
@@ -280,7 +275,7 @@ const id: Copy = {
   },
   waitlist: {
     heading: "Harganya belum ditentukan.",
-    body: "Latchnote sedang diuji di sesi belajar yang nyata. Setiap jam audio memakan biaya nyata untuk transkripsi dan AI, jadi paketnya harus cocok dengan cara orang benar-benar memakainya.",
+    body: "Latchnote masih prototipe awal. Harga belum ditentukan; survei singkat ini membantu memahami model yang mungkin cocok untuk penggunaan nanti.",
     pollQuestion: "Kamu lebih milih bayar yang mana?",
     pollOptions: [
       "Aku pakai API key sendiri dan bayar sekali untuk aplikasinya",
@@ -297,15 +292,14 @@ const id: Copy = {
     errorEmail: "Masukkan alamat email yang valid.",
     errorPoll: "Pilih opsi yang paling mendekati.",
     privacy: "Satu email saat akses awal dibuka. Tidak ada yang lain.",
-    unconfigured:
-      "Endpoint waitlist belum dikonfigurasi. Isi PUBLIC_WAITLIST_ENDPOINT sebelum deploy.",
+    unconfigured: "Waitlist belum dibuka. Silakan cek lagi nanti.",
   },
   faq: {
     heading: "Pertanyaan yang wajar ditanyakan duluan",
     items: [
       {
         q: "Apakah audioku keluar dari komputer?",
-        a: "Ya, selama sesi berjalan. Audio dikirim ke Deepgram untuk ditranskrip, dan teks transkripnya dikirim ke Claude untuk disusun. Catatan jadinya ditulis ke diskmu dan tidak disinkronkan ke mana pun.",
+        a: "Audio direkam dan ditranskrip secara lokal dengan Whisper. Jika pemformatan AI opsional diaktifkan, teks transkrip dikirim ke penyedia yang kamu konfigurasi; rekaman tidak dikirim untuk langkah itu. Catatan disimpan ke disk.",
       },
       {
         q: "Cuma untuk Windows?",
@@ -313,11 +307,11 @@ const id: Copy = {
       },
       {
         q: "Bisa menangani campuran bahasa Indonesia dan Inggris?",
-        a: "Justru itu kasus yang jadi alasan Latchnote dibuat. Deteksi bahasa berjalan otomatis, jadi kamu tidak perlu memilih bahasa sebelum sesi dimulai.",
+        a: "Aplikasi memakai model Whisper multilingual, tetapi akurasi campuran Indonesia/Inggris belum divalidasi di beragam sesi nyata.",
       },
       {
         q: "Kalau koneksiku putus gimana?",
-        a: "Perekaman tetap jalan dan tersimpan di disk. Ikon tray melaporkan errornya, dan audio mentahnya tetap ada, jadi yang sudah terekam tidak hilang.",
+        a: "Aplikasi menyimpan file WAV untuk pemulihan dan mencatat gap yang diketahui, tetapi pemulihan dan sesi panjang masih perlu divalidasi di perangkat nyata.",
       },
       {
         q: "Bisa dipakai buat meeting?",
@@ -325,7 +319,7 @@ const id: Copy = {
       },
       {
         q: "Kapan bisa dicoba?",
-        a: "Aplikasi desktopnya sudah berjalan utuh dan sedang divalidasi di sesi kuliah nyata. Akses awal diberikan ke waitlist lebih dulu.",
+        a: "Ini masih prototipe awal. Perilaku inti dan keandalan di perangkat nyata masih divalidasi; waitlist belum dibuka.",
       },
     ],
   },

@@ -23,21 +23,21 @@ const SCRIPT: Entry[] = [
   {
     kind: "transcript",
     at: "00:12:04",
-    text: "Kalau kita buka koneksi baru tiap request, cost-nya mahal banget. That is exactly what connection pooling solves.",
-  },
-  {
-    kind: "structured",
-    at: "00:12:40",
-    bullets: [
-      "Connection pooling reuses open database connections instead of opening one per request",
-      "Default pool size in the example is 10, raised through max_overflow",
-      "Pool exhaustion shows up as latency, not as an error",
-    ],
+    text: "Kalau kita buka koneksi baru tiap request, cost-nya mahal banget. Connection pooling reuses open connections. Pool size contoh ini 10 dan bisa dinaikkan lewat max_overflow. Kalau pool penuh, latency naik sebelum error muncul.",
   },
   {
     kind: "transcript",
     at: "00:13:22",
     text: "Pool size default-nya sepuluh di contoh ini, dan bisa kamu naikin lewat max_overflow.",
+  },
+  {
+    kind: "structured",
+    at: "00:13:22",
+    bullets: [
+      "Connection pooling reuses open database connections instead of opening one per request",
+      "Default pool size in the example is 10, raised through max_overflow",
+      "Pool exhaustion shows up as latency, not as an error",
+    ],
   },
   { kind: "manual", at: "00:14:05", text: "cek pool_size default" },
 ];
@@ -99,10 +99,10 @@ export default function LiveSessionDemo({
   }, [step, words, reduce]);
 
   const replay = useCallback(() => {
-    setStep(0);
+    setStep(reduce ? SCRIPT.length : 0);
     setWords(0);
     setRunId((value) => value + 1);
-  }, []);
+  }, [reduce]);
 
   const settled = SCRIPT.slice(0, step);
 
@@ -131,7 +131,7 @@ export default function LiveSessionDemo({
         ref={scroller}
         className="h-[352px] overflow-y-auto px-4 py-4 sm:h-[392px]"
         aria-live="polite"
-        aria-atomic="false"
+        aria-relevant="additions"
       >
         <ul className="space-y-5">
           {settled.map((entry, index) => (
@@ -201,6 +201,7 @@ function EntryBlock({
 
   return (
     <motion.li
+      aria-live={live ? "off" : undefined}
       initial={reduce ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}

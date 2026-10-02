@@ -8,7 +8,6 @@ interface Props {
 }
 
 const { lang, t } = Astro.props;
-const canonical = new URL(lang === "en" ? "/" : "/id/", Astro.site);
 ---
 
 <!doctype html>
@@ -18,14 +17,9 @@ const canonical = new URL(lang === "en" ? "/" : "/id/", Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{t.meta.title}</title>
     <meta name="description" content={t.meta.description} />
-    <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang="en" href={new URL("/", Astro.site)} />
-    <link rel="alternate" hreflang="id" href={new URL("/id/", Astro.site)} />
-    <link rel="alternate" hreflang="x-default" href={new URL("/", Astro.site)} />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={t.meta.title} />
     <meta property="og:description" content={t.meta.description} />
-    <meta property="og:url" content={canonical} />
     <meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0d0b0a" media="(prefers-color-scheme: dark)" />
     <meta name="generator" content={Astro.generator} />
@@ -46,7 +40,7 @@ const canonical = new URL(lang === "en" ? "/" : "/id/", Astro.site);
       href="#main"
       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-control focus:bg-accent focus:px-4 focus:py-2 focus:text-accent-fg"
     >
-      Skip to content
+      {lang === "en" ? "Skip to content" : "Lewati ke konten"}
     </a>
     <slot />
 

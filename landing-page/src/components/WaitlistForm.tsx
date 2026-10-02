@@ -73,9 +73,10 @@ export default function WaitlistForm({
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           email: email.trim(),
-          pricing_preference: labels.pollOptions[choice],
+          pricing_preference: ["byo-key", "monthly-hours", "undecided"][choice],
           language: document.documentElement.lang,
         }),
+        signal: AbortSignal.timeout(10000),
       });
       if (!response.ok) throw new Error(`Request failed with ${response.status}`);
       setStatus("success");
@@ -83,6 +84,10 @@ export default function WaitlistForm({
       setStatus("error");
       setMessage(labels.errorGeneric);
     }
+  }
+
+  if (!configured) {
+    return <p role="status" className="rounded-card border border-line bg-raised p-6 text-[15px] leading-relaxed text-muted">{labels.unconfigured}</p>;
   }
 
   if (status === "success") {

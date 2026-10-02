@@ -1,6 +1,6 @@
 # Plan 004: Landing page siap menerima waitlist dengan klaim sesuai bukti
 
-Status TODO. Prioritas P1/P2. Effort M. Risiko MED untuk endpoint, LOW untuk copy. Kategori UX/docs/distribusi. Dependensi: copy/UI independen; klaim fitur desktop menunggu 003/005. Planned at `37c7332`, 2 Oktober 2026.
+Status IN PROGRESS. Prioritas P1/P2. Effort M. Risiko MED untuk endpoint, LOW untuk copy. Kategori UX/docs/distribusi. Dependensi: copy/UI independen; klaim fitur desktop menunggu 003/005. Planned at `37c7332`, 2 Oktober 2026.
 
 ## Konteks dan tujuan
 
@@ -39,13 +39,15 @@ Conventions: reuse dictionary `Copy`, React islands `client:idle`/`client:visibl
 
 ## Done criteria
 
-- [ ] Build EN/ID exit 0 pada Node sesuai minimum; generated routes benar.
+- [x] Build EN/ID exit 0 pada Node 24.11.0; kedua generated routes terverifikasi.
 - [ ] Mobile/desktop, reduced-motion Replay, keyboard/focus dan hotkey editing checks tercatat lulus.
-- [ ] Copy mengungkap simulasi serta batas AI/API/local storage; tidak ada klaim benchmark produk tanpa bukti.
+- [x] Copy mengungkap simulasi serta batas prototipe/AI opsional; klaim angka belajar dan reliabilitas tak terbukti dihapus.
 - [ ] Endpoint nyata menerima submission yang disetujui operator; saved payload dan failure/timeout diuji.
-- [ ] Aset placeholder/starter dihapus atau diganti, canonical sesuai domain operator.
-- [ ] README operasional, `git diff --check` exit 0, status index diperbarui. Deployment publik tetap tindakan terpisah.
+- [ ] Foto placeholder dihapus dan favicon bukan starter; canonical menunggu domain operator.
+- [x] README operasional, `git diff --check` exit 0. Deployment publik tetap tindakan terpisah.
 
 ## STOP conditions dan maintenance
 
 Stop pada incompatibility Node/framework yang tidak dapat diselesaikan dengan runtime yang didukung, endpoint memerlukan secret di browser, atau pilihan domain/service belum tersedia untuk external setup. Lanjutkan pekerjaan copy/UI independen dan catat blocker endpoint. Waitlist publik bisa dibuka sebelum desktop selesai hanya dengan stage copy yang jujur. Pertahankan dua bahasa sinkron; tambah form backend sendiri hanya jika hosted endpoint terbukti tidak memenuhi kebutuhan.
+
+Eksekusi parsial 2 Oktober 2026: copy/demo, reduced-motion Replay, hotkey Try/focus/editing guard, placeholder foto, canonical sementara, fallback waitlist tertutup, timeout/payload stable ID, dan README diperbarui. `npm run build` lulus pada Node 24.11.0; `/` dan `/id/` dihasilkan; `git diff --check` bersih. Belum dilakukan browser manual, external submission, verifikasi receiver, domain/canonical/share asset launch, atau test penyimpanan endpoint. Jangan membuka waitlist/deploy sampai gate tersebut selesai.
