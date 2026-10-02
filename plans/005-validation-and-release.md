@@ -1,4 +1,4 @@
-# Plan 005: Validasi MVP dan putuskan kesiapan early access
+    # Plan 005: Validasi MVP dan putuskan kesiapan early access
 
 Status TODO. Prioritas P1. Effort L, bergantung waktu penguji. Risiko LOW untuk dokumentasi, MED untuk sesi berbayar nyata. Kategori tests/docs/direction. Dependensi 001–003; 004 diperlukan untuk waitlist publik. Planned at `37c7332`, 2 Oktober 2026.
 
