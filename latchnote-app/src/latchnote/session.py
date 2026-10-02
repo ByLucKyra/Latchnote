@@ -84,7 +84,7 @@ class SessionOrchestrator:
         self,
         session: Session,
         writer: MarkdownWriter,
-        structure_chunk: StructureChunk,
+        structure_chunk: StructureChunk | None = None,
         chunk_seconds: int = 120,
     ) -> None:
         self._session = session
@@ -100,7 +100,7 @@ class SessionOrchestrator:
         recorded_at = at or datetime.now()
         elapsed_seconds = max(0, int((recorded_at - self._session.started_at).total_seconds()))
         self._writer.append_transcript(text, self._session.timestamp(recorded_at))
-        chunk = self._chunker.add(text, elapsed_seconds)
+        chunk = self._chunker.add(text, elapsed_seconds) if self._structure_chunk else None
         if chunk is not None:
             self._schedule(chunk)
 

@@ -1,133 +1,147 @@
-"""Deepgram live transcription for captured PCM audio."""
+"""Local CPU Whisper transcription of small windows of captured PCM audio."""
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
-from queue import Full, Queue
+from io import BytesIO
+from pathlib import Path
+from queue import Empty, Full, Queue
 from threading import Event, Thread
+from time import monotonic
+from typing import TYPE_CHECKING
+from wave import open as open_wave
 
 from .audio_capture import AudioFormat
 
+if TYPE_CHECKING:
+    from faster_whisper import WhisperModel
+
 LOGGER = logging.getLogger(__name__)
-TranscriptHandler = Callable[["TranscriptSegment"], None]
 
 
 class SttError(RuntimeError):
-    """Raised when the live transcription connection cannot start."""
+    """Raised when local transcription cannot start or finish safely."""
 
 
 @dataclass(frozen=True)
 class TranscriptSegment:
-    """One final Deepgram transcript result."""
+    """One final transcript with its position in the source audio."""
 
     text: str
+    start_seconds: float
 
 
-class DeepgramSttClient:
-    """Send PCM chunks to Deepgram without blocking the audio callback."""
+def load_whisper_model(
+    model: str, cache_dir: Path, threads: int = 2, download: bool = False
+) -> "WhisperModel":
+    """Load CPU INT8 Whisper; network downloads require an explicit opt-in."""
+    try:
+        from faster_whisper import WhisperModel
+
+        return WhisperModel(
+            model, device="cpu", compute_type="int8", cpu_threads=threads, num_workers=1,
+            download_root=str(cache_dir), local_files_only=not download,
+        )
+    except (ImportError, OSError, RuntimeError, ValueError) as error:
+        raise SttError("Unable to load local Whisper. Run --download-model first, or check the model path.") from error
+
+
+def transcribe_audio(
+    model: "WhisperModel", source: str | BytesIO, language: str | None = None, offset: float = 0
+) -> Iterator[TranscriptSegment]:
+    """Yield timestamped text using the same decoder for live and saved audio."""
+    segments, _ = model.transcribe(
+        source, language=language, beam_size=1, vad_filter=True, condition_on_previous_text=False
+    )
+    for segment in segments:
+        text = segment.text.strip()
+        if text:
+            yield TranscriptSegment(text, offset + segment.start)
+
+
+class LocalWhisperSttClient:
+    """Decode on one worker while capture writes the authoritative recovery WAV."""
 
     def __init__(
-        self, api_key: str, audio_format: AudioFormat, on_final: TranscriptHandler
+        self, model: "WhisperModel", audio_format: AudioFormat,
+        on_final: Callable[[TranscriptSegment], None], window_seconds: int = 5,
+        language: str | None = None,
     ) -> None:
-        self._api_key = api_key
-        self._audio_format = audio_format
+        if window_seconds < 1 or audio_format.sample_width != 2 or audio_format.channels < 1 or audio_format.rate < 1:
+            raise SttError("Whisper requires positive windows and 16-bit PCM audio.")
+        self._model = model
+        self._format = audio_format
         self._on_final = on_final
-        self._connection: object | None = None
-        self._audio_queue: Queue[bytes | None] = Queue(maxsize=128)
-        self._stopped = Event()
+        self._language = language
+        self._bytes_per_second = audio_format.rate * audio_format.channels * audio_format.sample_width
+        self._window_bytes = self._bytes_per_second * window_seconds
+        # ponytail: bounded 30-second backlog; recover saved WAV if CPU cannot keep up.
+        self._queue: Queue[tuple[float, bytes]] = Queue(maxsize=max(1, 30 // window_seconds))
+        self._buffer = bytearray()
+        self._received_bytes = 0
+        self._stopping = Event()
         self._worker: Thread | None = None
         self.last_error: str | None = None
 
     def start(self) -> None:
-        """Open the live connection and begin sending queued audio."""
+        """Start decoding without loading a second model or blocking audio capture."""
         if self._worker is not None:
-            raise SttError("Live transcription is already running.")
-        if not self._api_key:
-            raise SttError("DEEPGRAM_API_KEY is not configured.")
-
-        try:
-            from deepgram import DeepgramClient
-            from deepgram.core.events import EventType
-
-            client = DeepgramClient(api_key=self._api_key)
-            self._connection = client.listen.v1.connect(
-                model="nova-3",
-                language="multi",
-                encoding="linear16",
-                sample_rate=self._audio_format.rate,
-                channels=self._audio_format.channels,
-                interim_results=True,
-                punctuate=True,
-                smart_format=True,
-            )
-            self._connection.on(EventType.MESSAGE, self._handle_message)
-            self._connection.on(EventType.ERROR, self._handle_error)
-            self._connection.start_listening()
-        except (ImportError, OSError, RuntimeError) as error:
-            self._connection = None
-            self.last_error = str(error)
-            raise SttError(f"Unable to start Deepgram live transcription: {error}") from error
-
-        self._stopped.clear()
-        self._worker = Thread(target=self._send_queued_audio, name="deepgram-stt", daemon=True)
+            raise SttError("Local transcription is already running.")
+        self._worker = Thread(target=self._run, name="whisper-stt", daemon=True)
         self._worker.start()
-        LOGGER.info("Deepgram live transcription started.")
 
     def submit_audio(self, audio: bytes) -> None:
-        """Queue captured PCM audio; recovery WAV remains authoritative if queue is full."""
-        if self._stopped.is_set() or self._worker is None:
+        """Accept native PCM from the single capture callback without waiting for inference."""
+        if self._stopping.is_set() or self._worker is None or not self._worker.is_alive():
             return
+        self._buffer.extend(audio)
+        while len(self._buffer) >= self._window_bytes:
+            self._enqueue(bytes(self._buffer[:self._window_bytes]))
+            del self._buffer[:self._window_bytes]
+
+    def _enqueue(self, audio: bytes) -> None:
+        offset = self._received_bytes / self._bytes_per_second
+        self._received_bytes += len(audio)
         try:
-            self._audio_queue.put_nowait(audio)
+            self._queue.put_nowait((offset, audio))
         except Full:
-            self.last_error = "Live transcription queue is full; recovery audio is retained."
+            self.last_error = "Whisper cannot keep up; live text has gaps. Use --transcribe-file on the saved WAV."
             LOGGER.warning(self.last_error)
 
-    def stop(self) -> None:
-        """Stop live transcription; the local recovery WAV remains intact."""
+    def stop(self, timeout: float = 60) -> None:
+        """After capture stops, flush the tail and drain queued windows before returning."""
         if self._worker is None:
             return
-        self._stopped.set()
-        try:
-            self._audio_queue.put_nowait(None)
-        except Full:
-            pass
-        self._worker.join(timeout=5)
+        if self._buffer:
+            self._enqueue(bytes(self._buffer))
+            self._buffer.clear()
+        self._stopping.set()
+        self._worker.join(timeout=timeout)
+        if self._worker.is_alive():
+            raise SttError("Whisper is still draining audio; wait and choose Stop again. Recovery WAV is retained.")
         self._worker = None
-        if self._connection is not None:
-            self._connection.send_finalize()
-            self._connection.send_close_stream()
-            self._connection = None
-        LOGGER.info("Deepgram live transcription stopped.")
 
-    def retry(self) -> None:
-        """Reconnect after a recoverable live-transcription failure."""
-        self.stop()
-        self.start()
-
-    def _send_queued_audio(self) -> None:
-        while not self._stopped.is_set():
-            audio = self._audio_queue.get()
-            if audio is None:
-                return
-            try:
-                if self._connection is not None:
-                    self._connection.send_media(audio)
-            except (OSError, RuntimeError) as error:
-                self._handle_error(error)
-                return
-
-    def _handle_message(self, message: object) -> None:
-        if not getattr(message, "is_final", False):
-            return
-        channel = getattr(message, "channel", None)
-        alternatives = getattr(channel, "alternatives", ())
-        if not alternatives:
-            return
-        text = str(getattr(alternatives[0], "transcript", "")).strip()
-        if text:
-            self._on_final(TranscriptSegment(text=text))
-
-    def _handle_error(self, error: object) -> None:
-        self.last_error = str(error)
-        LOGGER.error("Deepgram live transcription failed: %s", error)
+    def _run(self) -> None:
+        try:
+            while True:
+                try:
+                    offset, audio = self._queue.get(timeout=0.1)
+                except Empty:
+                    if self._stopping.is_set():
+                        return
+                    continue
+                source = BytesIO()
+                with open_wave(source, "wb") as wave_file:
+                    wave_file.setnchannels(self._format.channels)
+                    wave_file.setsampwidth(self._format.sample_width)
+                    wave_file.setframerate(self._format.rate)
+                    wave_file.writeframes(audio)
+                source.seek(0)
+                started = monotonic()
+                # ponytail: non-overlapping windows may split words; add overlap after ID/EN benchmarks.
+                for segment in transcribe_audio(self._model, source, self._language, offset):
+                    self._on_final(segment)
+                LOGGER.info("Whisper: %.2fs audio processed in %.2fs", len(audio) / self._bytes_per_second, monotonic() - started)
+        except (OSError, RuntimeError, ValueError) as error:
+            self.last_error = f"Local transcription failed ({type(error).__name__}); recovery WAV is retained."
+            LOGGER.error(self.last_error)

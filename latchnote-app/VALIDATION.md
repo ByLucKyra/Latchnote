@@ -3,9 +3,9 @@
 ## Before testing
 
 1. Use Python 3.12+ and install the project dependencies.
-2. Copy `.env.example` to `.env` and add valid `DEEPGRAM_API_KEY` and `ANTHROPIC_API_KEY` values.
+2. Use `.env.example` as a reference without overwriting local keys. Run `python -m latchnote --download-model` once; local raw transcription needs no API key.
 3. Start a course with mixed Indonesian/English speech.
-4. Run `python -m latchnote --title "<course title>"` and choose **Start Session** from the tray.
+4. Run `python -m latchnote --title "<course title>" --raw-only` and choose **Start Session** from the tray. Test optional `NOTES_AI_*` cleanup separately without `--raw-only`.
 
 ## Per-session checklist
 
@@ -16,12 +16,15 @@
 - [ ] Confirm timestamps, transcript, structured notes, and `📌` micro-notes appear in chronological order.
 - [ ] Open the same file in Obsidian and confirm it renders normally.
 - [ ] Note the longest visible transcript delay; target is 10 seconds or less.
+- [ ] Measure CPU, peak RAM, backlog, and video smoothness on an actual 8 GB entry-level Intel/AMD machine; cached-model offline mode must work.
+- [ ] Test standard and custom AI formatting independently; verify every generated fact against raw transcript.
 
 ## Recovery checks
 
 - [ ] Stop normally: the WAV recovery file and Markdown file both remain readable.
-- [ ] Disconnect the network during a recording, then stop: recovery WAV remains available and the tray reports an error.
+- [ ] Disconnect the network during raw-only recording: local STT must continue. Test optional provider failure separately: raw notes and recovery WAV remain available.
 - [ ] Restart the app after a failed transcription: the previous recovery WAV remains in `data/`.
+- [ ] Run `python -m latchnote --transcribe-file "data/<saved-session>.wav" --raw-only`; a new note is created without overwriting old output.
 
 ## Feedback record
 

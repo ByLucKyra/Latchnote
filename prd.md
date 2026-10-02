@@ -8,7 +8,7 @@
 |---|---|
 | **Status** | Draft — MVP |
 | **Owner** | Lucky Ramadhan |
-| **Last updated** | July 24, 2026 |
+| **Last updated** | October 2, 2026 |
 | **Version** | 0.1 |
 
 ---
@@ -16,6 +16,8 @@
 ## 1. Summary
 
 Latchnote is a Windows desktop companion app that listens to system audio while the user watches an online course, transcribes it in real time, and organizes it into structured Markdown notes — without requiring the user to pause or manually type through the whole session. A global hotkey lets the user drop short, personal keyword notes at any moment, preserving the small amount of manual/motor engagement known to aid retention, without demanding full note-taking.
+
+**Current direction (October 2, 2026):** local multilingual Whisper for free raw transcription, targeting entry-level Intel/AMD Windows laptops with integrated graphics and 8 GB RAM. CPU-only performance and ID/EN quality are acceptance gates, not assumed capabilities. Optional AI cleanup uses a user-configured OpenAI-compatible provider, with Latchnote's standard factual rules and user-editable formatting preferences. Windows `.exe` distribution is the intended outcome; packaging has not been delivered yet. The current trial emits final text in short windows, not word-by-word interim captions.
 
 ## 2. Problem
 
@@ -114,11 +116,11 @@ A close competitor identified during market research, not previously scoped:
 - Simple start/stop control (tray icon).
 
 ### 9.2 Speech-to-Text
-- Stream captured audio to a speech-to-text service in real time or near-real-time.
+- Process captured audio locally through multilingual Whisper in near-real-time; no STT API key or cloud upload is required after model download.
 - Handle mixed Indonesian/English speech without requiring the user to pre-select a language.
 - Attach a timestamp (relative to session start) to each transcript segment.
 - Display partial transcript with a target maximum delay of 10 seconds.
-- If the network or STT service fails, keep recording locally and retry without losing captured audio.
+- If local inference fails or cannot keep up, retain the WAV recording, expose gaps/errors, and support processing saved audio again. Network failure must not interrupt raw-only transcription.
 
 ### 9.3 Note Structuring
 - Every ~2-3 minutes of speech, send only the new transcript chunk to an LLM for restructuring into bullet-point notes.
@@ -126,6 +128,9 @@ A close competitor identified during market research, not previously scoped:
 - Strip filler words and false starts.
 - Never introduce information not present in the source transcript.
 - If structuring fails, retain the raw transcript and retry later; never discard the chunk.
+- Structuring is optional and configurable via provider base URL, model, and local API key. The initial adapter supports OpenAI-compatible chat completions, not every vendor's native protocol.
+- Latchnote owns session metadata, timestamps, and personal-note markers. Default AI sections are Key ideas, Technical details, and Examples when present in the source. Users may customize headings, verbosity, and bullet/table presentation through a UTF-8 format file, while factual grounding rules remain mandatory.
+- Explicit raw-only mode makes no AI-provider requests. When enabled, only transcript text is sent for cleanup; raw notes remain independently available.
 
 ### 9.4 Manual Micro-Notes
 - Global hotkey (default `Ctrl+Space`) works regardless of which window has focus.
@@ -140,7 +145,7 @@ A close competitor identified during market research, not previously scoped:
 - AI-structured notes and manual micro-notes appear interleaved in chronological order.
 - Use `[HH:MM:SS]` relative timestamps; AI notes use the chunk start time and manual notes use the hotkey submission time.
 - Output is plain Markdown, readable in Obsidian, Notion, or any text editor without conversion.
-- Audio and transcript may be sent temporarily to configured third-party APIs for processing; final notes remain local and MVP has no cloud sync.
+- Audio transcription stays local. Transcript text may be sent to a configured third-party AI provider only when optional cleanup is enabled; final notes remain local and MVP has no cloud sync.
 
 ## 10. Non-Functional Requirements
 
@@ -151,7 +156,7 @@ A close competitor identified during market research, not previously scoped:
 | Reliability | No crash or data loss during a continuous 60-minute session |
 | Portability | Output is plain Markdown, no proprietary formatting |
 | Privacy | Notes stored locally, not in third-party cloud, for MVP |
-| Cost control | Chunking avoids redundant API calls to STT/LLM providers |
+| Cost control | Local STT has no API charge; optional AI chunking avoids redundant requests |
 | Accuracy | Preserve key terms and identifiers; target at least 90% accuracy on important words in test recordings |
 | Resilience | Network/API failures do not cause data loss; captured audio and raw transcript remain recoverable |
 | Security | API keys come from local environment/configuration and are never committed to the repository |
@@ -161,14 +166,14 @@ A close competitor identified during market research, not previously scoped:
 ```
 Audio Capture (WASAPI loopback)
         ↓
-STT Client (Deepgram streaming)
+STT Client (local Whisper, CPU INT8)
         ↓
-Session Orchestrator ──→ Note Structurer (Claude API) ──→ Markdown Writer
+Session Orchestrator ──→ Note Structurer (optional configured API) ──→ Markdown Writer
         ↑
 Hotkey Listener (global hotkey + popup) ──────────────────↗
 ```
 
-**Stack:** Python, PyAudioWPatch, Deepgram streaming API, Anthropic Claude API, `keyboard` + PySide6, `pystray`, local Markdown storage.
+**Current trial stack:** Python 3.12+, PyAudioWPatch, faster-whisper/CTranslate2 (multilingual `base`, CPU INT8), HTTPX for optional OpenAI-compatible AI cleanup, `keyboard` + PySide6, `pystray`, local Markdown and recovery WAV storage. This replaces the original Deepgram/Anthropic dependency decision; native whisper.cpp acceleration remains a potential benchmark alternative rather than a shipped engine.
 
 API keys are supplied through environment variables or a local untracked configuration file. They must never be written to notes, logs, screenshots, or source control.
 

@@ -21,14 +21,21 @@ class MarkdownWriter:
         self._session = session
         self._lock = Lock()
         notes_dir.mkdir(parents=True, exist_ok=True)
-        filename = f"{session.started_at:%Y-%m-%d}_{_safe_filename(session.title)}.md"
-        self.path = notes_dir / filename
-        self.path.write_text(
-            f"# Session: {session.title}\n"
-            f"**Date:** {session.started_at:%Y-%m-%d %H:%M}\n\n"
-            "---\n",
-            encoding="utf-8",
-        )
+        stem = f"{session.started_at:%Y-%m-%d}_{_safe_filename(session.title)}"
+        suffix = 0
+        while True:
+            self.path = notes_dir / f"{stem}{f'_{suffix}' if suffix else ''}.md"
+            try:
+                output = self.path.open("x", encoding="utf-8")
+                break
+            except FileExistsError:
+                suffix += 1
+        with output:
+            output.write(
+                f"# Session: {session.title}\n"
+                f"**Date:** {session.started_at:%Y-%m-%d %H:%M}\n\n"
+                "---\n"
+            )
 
     def append_transcript(self, text: str, timestamp: str) -> None:
         """Append one final transcript segment."""
@@ -39,7 +46,7 @@ class MarkdownWriter:
         self._append(f"\n## [{timestamp}]\n\n📌 **{text.strip()}**\n")
 
     def append_structured_notes(self, bullets: str, timestamp: str) -> None:
-        """Append Claude's Markdown bullets at their source chunk timestamp."""
+        """Append provider-generated Markdown at its source chunk timestamp."""
         self._append(f"\n## [{timestamp}]\n\n### Structured notes\n\n{bullets.strip()}\n")
 
     def _append(self, text: str) -> None:

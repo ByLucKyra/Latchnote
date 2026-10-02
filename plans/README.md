@@ -4,6 +4,8 @@ Tanggal: **2 Oktober 2026 (Asia/Jakarta)**. Baseline: commit **`37c7332`**. Stat
 
 Dokumen ini merupakan rencana lanjutan berdasarkan audit kode dan dokumen lokal, bukan bukti bahwa perbaikan telah selesai. Dibuat menggunakan skill `improve`. Baca rencana terkait sepenuhnya sebelum implementasi.
 
+> **Perubahan arah, 2 Oktober 2026:** user memilih raw transcription dengan Whisper lokal untuk laptop entry-level RAM 8 GB. Percobaan sudah memakai faster-whisper `base` CPU INT8; penyusunan catatan opsional melalui endpoint OpenAI-compatible, dengan aturan faktual standar + file format custom. Lihat `latchnote-app/README.md` untuk konfigurasi, hasil smoke, dan batasnya. Plan 001 khusus Deepgram tidak lagi menjadi jalur implementasi; Plan 003 perlu direkonsiliasi untuk local backlog/recovery, bukan reconnect STT cloud. Jangan mengimplementasikan kembali Deepgram dari baseline lama. Storage/durability 002, waitlist 004, dan real-user validation 005 masih relevan. Core smoke bukan bukti sesi 60 menit atau `.exe` siap rilis.
+
 ## Tujuan dan hubungan dengan dokumen lama
 
 Tujuan tetap mengikuti `prd.md`: pendamping belajar Windows, audio sistem ke transkrip dan catatan Markdown lokal, dengan micro-note melalui hotkey. Fokus sekarang adalah membuktikan pipeline bekerja, melindungi hasil belajar, dan mengumpulkan feedback sebelum monetisasi.
@@ -60,13 +62,13 @@ Path Python di tabel relatif ke `latchnote-app/src/latchnote/`; path frontend re
 
 | Plan | Hasil yang dituju | Prioritas | Estimasi | Dependensi | Status |
 |---|---|---|---|---|---|
-| [001](001-streaming-lifecycle.md) | STT dapat start, menerima audio, finalize, dan stop aman | P0 | M | Tidak ada | TODO |
-| [002](002-storage-and-structuring.md) | Sesi unik, recovery durable, Markdown kronologis, AI worker terkendali | P0/P1 | L | 001 | TODO |
-| [003](003-recovery-and-desktop-ux.md) | Retry/error terlihat, recovery dapat dijalankan, partial transcript dan setup usable | P1 | L | 001, 002 | TODO |
+| [001](001-streaming-lifecycle.md) | STT Deepgram start/finalize/stop | P0 | M | Tidak ada | REJECTED: diganti trial Whisper lokal; lihat README desktop |
+| [002](002-storage-and-structuring.md) | Sesi unik, recovery durable, Markdown kronologis, AI worker terkendali | P0/P1 | L | Trial Whisper lokal | TODO: allocation tanpa overwrite sudah ada; durability belum |
+| [003](003-recovery-and-desktop-ux.md) | Error/backlog terlihat, recovery usable, partial transcript dan setup | P1 | L | Trial Whisper lokal, 002 | TODO: rekonsiliasi STT lokal dahulu |
 | [004](004-waitlist-readiness.md) | Landing page jujur, accessible, waitlist terverifikasi | P1/P2 | M | Independen untuk copy/UI; klaim fitur menunggu 003 | TODO |
 | [005](005-validation-and-release.md) | Bukti tiga pengguna dan release checklist; keputusan pricing berbasis biaya | P1 | L | 001–003; 004 untuk distribusi waitlist | TODO |
 
-Status yang diperbolehkan: TODO, IN PROGRESS, DONE, BLOCKED (sertakan sebab), REJECTED (sertakan alasan). Semua plan ini dipilih sebagai lanjutan permintaan user untuk planning repo; bukan daftar fitur yang harus dibangun sekaligus. Jalankan 001 dahulu. 004 boleh paralel selama copy tidak menjanjikan fitur yang belum lolos validasi.
+Status yang diperbolehkan: TODO, IN PROGRESS, DONE, BLOCKED (sertakan sebab), REJECTED (sertakan alasan). Setelah perubahan arah, lanjutkan benchmark Whisper pada hardware target sebelum durability 002; jangan menjalankan plan Deepgram yang sudah ditolak. 004 boleh paralel selama copy tidak menjanjikan fitur yang belum lolos validasi.
 
 ## Keputusan produk untuk rencana ini
 
@@ -74,7 +76,7 @@ Status yang diperbolehkan: TODO, IN PROGRESS, DONE, BLOCKED (sertakan sebab), RE
 2. Format canonical mengikuti PRD §9.5: header event `[HH:MM:SS]`, timestamp AI = awal chunk, micro-note = waktu submit; final export diurutkan stabil. Live export boleh sementara mengikuti event kedatangan, tetapi harus diberi status sementara dan dapat dibangun ulang.
 3. WAV, event transcript/manual, dan task AI pending dipertahankan untuk recovery. Tidak ada penghapusan otomatis sampai pengguna menyetujui kebijakan retensi.
 4. Recovery bukan sekadar keberadaan WAV: harus ada langkah yang bisa menghasilkan kembali transcript/notes serta menandai gap dan menghindari duplikasi.
-5. Deepgram dibutuhkan untuk live STT; tanpa Anthropic aplikasi harus jelas berada pada mode transcript-only, tanpa retry AI yang sia-sia.
+5. STT memakai Whisper lokal tanpa key. AI cleanup opsional menggunakan endpoint chat-completions OpenAI-compatible; tanpa konfigurasi atau dengan `--raw-only`, tidak ada panggilan AI.
 6. Harga belum ditentukan. Landing page tetap waitlist + survei model harga; tidak ada pembayaran, akun, lisensi, atau subscription backend dalam rencana ini.
 7. Bedakan status pekerjaan: implemented, automated-verified, manual-verified. Milestone selesai hanya setelah acceptance criteria dan bukti terpenuhi.
 

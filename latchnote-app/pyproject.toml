@@ -9,8 +9,10 @@ description = "Local Markdown notes from live course audio."
 requires-python = ">=3.12"
 dependencies = [
     "PyAudioWPatch>=0.2.12.8",
-    "deepgram-sdk>=7.7,<8",
-    "anthropic>=1,<2",
+    "faster-whisper==1.2.1",
+    # PyAV 19 removed metadata_errors, still used by faster-whisper 1.2.1.
+    "av>=11,<19",
+    "httpx>=0.28,<1",
     "keyboard==0.13.5",
     "PySide6>=6.11,<7",
     "pystray==0.19.5",

@@ -42,7 +42,7 @@ class WasapiLoopbackCapture:
         self.format: AudioFormat | None = None
         self.path: Path | None = None
 
-    def start(self, session_slug: str) -> Path:
+    def start(self, session_slug: str, paused: bool = False) -> Path:
         """Start capture and return the local WAV recovery path."""
         if self._stream is not None:
             raise AudioCaptureError("Audio capture is already running.")
@@ -71,6 +71,7 @@ class WasapiLoopbackCapture:
                 input_device_index=device["index"],
                 frames_per_buffer=1024,
                 stream_callback=self._record_chunk,
+                start=not paused,
             )
         except (OSError, LookupError) as error:
             self.stop()
@@ -83,14 +84,17 @@ class WasapiLoopbackCapture:
         """Set the live-audio consumer after the native format is known."""
         with self._lock:
             self._on_chunk = on_chunk
+        if self._stream is not None and self._stream.is_stopped():
+            self._stream.start_stream()
 
     def stop(self) -> None:
         """Stop capture and close the WAV file without discarding it."""
+        # PortAudio may wait for a callback that needs _lock; never hold it here.
+        if self._stream is not None:
+            self._stream.stop_stream()
+            self._stream.close()
+            self._stream = None
         with self._lock:
-            if self._stream is not None:
-                self._stream.stop_stream()
-                self._stream.close()
-                self._stream = None
             if self._wave_file is not None:
                 self._wave_file.close()
                 self._wave_file = None

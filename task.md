@@ -2,9 +2,11 @@
 
 Scope: Windows MVP in `latchnote-app/`. The first usable slice is system audio → transcript → local Markdown. UI and AI structuring come after that path works.
 
+Updated 2 October 2026: local Whisper raw notes first (8 GB entry-level CPU target), optional provider-independent AI cleanup and user-customizable format. Checkboxes describe implementation; real-session acceptance remains open. See `latchnote-app/README.md` for the current trial and benchmark limitations.
+
 ## Milestone 0 — Decisions and Setup
 
-- [ ] Confirm Deepgram and Anthropic API keys are available locally.
+- [x] Cache multilingual Whisper `base` locally; raw-only transcription requires no API keys.
 - [x] Create Python project metadata and a `.gitignore` that excludes local secrets, recordings, and generated notes.
 - [x] Define the local directories for temporary audio, recovery data, and final Markdown notes.
 - [x] Add an `.env.example` with variable names only; never commit real keys.
@@ -33,11 +35,12 @@ Scope: Windows MVP in `latchnote-app/`. The first usable slice is system audio �
 
 ## Milestone 3 — Live Speech-to-Text
 
-- [x] Send captured audio to Deepgram streaming.
-- [x] Handle interim and final transcript events.
+- [x] Transcribe buffered PCM locally with faster-whisper CPU INT8.
+- [x] Drain complete windows and the final short window with source timestamps.
+- [ ] Implement stable interim display; current trial emits delayed final segments only.
 - [x] Write final transcript segments to Markdown as they arrive.
-- [x] Support automatic language detection for Indonesian/English mixed speech.
-- [x] On connection failure, retain local audio and expose a retryable error state.
+- [x] Enable multilingual language detection; actual ID/EN accuracy still requires validation.
+- [x] Bound live backlog, report transcription errors/gaps, and retain recovery audio.
 - [ ] Test with a 30-minute mixed-language course recording.
 
 **Done when:** browser audio becomes timestamped Markdown transcript with a maximum practical delay of 10 seconds.
@@ -45,9 +48,12 @@ Scope: Windows MVP in `latchnote-app/`. The first usable slice is system audio �
 ## Milestone 4 — Structured Notes
 
 - [x] Accumulate only new final transcript text in 2–3 minute chunks.
-- [x] Send each chunk to Claude with a prompt that preserves facts, terms, and identifiers.
+- [x] Send each chunk to an optional OpenAI-compatible AI endpoint with standard factual rules.
+- [x] Support a UTF-8 custom formatting file without replacing the raw transcript or standard rules.
 - [x] Append structured bullets at the chunk start timestamp.
-- [x] Preserve raw transcript if structuring fails and retry later.
+- [x] Preserve raw transcript if structuring fails; disabled AI schedules no requests.
+- [ ] Persist failed tasks and expose retry after restart; current failed-chunk list is in memory only.
+- [ ] Verify custom/default formats with a real provider; enforce chronological final export.
 - [x] Add a small check proving chunks are not sent twice.
 
 **Done when:** one completed session produces chronological, structured Markdown notes without invented content.
