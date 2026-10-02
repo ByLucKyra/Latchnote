@@ -1,12 +1,13 @@
 """Local CPU Whisper transcription of small windows of captured PCM audio."""
 
 import logging
+from math import isclose
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from queue import Empty, Full, Queue
-from threading import Event, Thread
+from threading import Event, Lock, Thread
 from time import monotonic
 from typing import TYPE_CHECKING
 from wave import open as open_wave
@@ -80,6 +81,8 @@ class LocalWhisperSttClient:
         self._buffer = bytearray()
         self._received_bytes = 0
         self._stopping = Event()
+        self._gap_lock = Lock()
+        self._gaps: list[tuple[float, float]] = []
         self._worker: Thread | None = None
         self.last_error: str | None = None
 
@@ -106,7 +109,24 @@ class LocalWhisperSttClient:
             self._queue.put_nowait((offset, audio))
         except Full:
             self.last_error = "Whisper cannot keep up; live text has gaps. Use --transcribe-file on the saved WAV."
+            end = offset + len(audio) / self._bytes_per_second
+            with self._gap_lock:
+                if self._gaps and isclose(self._gaps[-1][1], offset, abs_tol=1e-9):
+                    self._gaps[-1] = (self._gaps[-1][0], end)
+                else:
+                    self._gaps.append((offset, end))
             LOGGER.warning(self.last_error)
+
+    def pending_gaps(self) -> list[tuple[float, float]]:
+        """Return source-audio ranges dropped by the bounded queue."""
+        with self._gap_lock:
+            return self._gaps.copy()
+
+    def acknowledge_gap(self, gap: tuple[float, float]) -> None:
+        """Remove a gap only after its journal event has been written."""
+        with self._gap_lock:
+            if gap in self._gaps:
+                self._gaps.remove(gap)
 
     def stop(self, timeout: float = 60) -> None:
         """After capture stops, flush the tail and drain queued windows before returning."""

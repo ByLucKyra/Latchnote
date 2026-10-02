@@ -34,7 +34,7 @@ audio_capture.py  →  stt_client.py  →  session.py  →  structurer.py  →  
 - **`structurer.py`** — Sends text chunks to optional provider with standard factual rules plus custom presentation instructions
 - **`writer.py`** — Journals session events durably and maintains a chronological `.md` export
 - **`hotkey_listener.py`** — Global hotkey (`Ctrl+Space`), floating input popup (PySide6), emits timestamped micro-notes back to session
-- **`__main__.py`** — Entry point, tray app, explicit model download and saved-audio CLI
+- **`__main__.py`** — Entry point, tray app, explicit model download, config reload and recovery actions
 
 Keep modules focused. One responsibility per file. No god-objects.
 

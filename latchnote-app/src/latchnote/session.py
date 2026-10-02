@@ -118,6 +118,10 @@ class SessionOrchestrator:
         recorded_at = at or datetime.now()
         self._writer.append_manual_note(text, self._session.timestamp(recorded_at))
 
+    def add_recovery_gap(self, start_seconds: float, end_seconds: float, reason: str) -> None:
+        """Persist a missing source-audio range without merging guessed recovery text."""
+        self._writer.append_recovery_gap(start_seconds, end_seconds, reason)
+
     def finish(self, at: datetime | None = None, timeout: float = 10, source_success: bool = True) -> bool:
         """Drain provider work by a total deadline and report unfinished tasks."""
         deadline = monotonic() + timeout

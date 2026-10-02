@@ -24,9 +24,13 @@ an argument still used by faster-whisper 1.2.1. No separate FFmpeg installation 
 
 Choose **Start Session** in the tray, play your course in any application routed
 through the default Windows output device, and press `Ctrl+Space` for a personal
-note. Choose **Stop Session** to flush the final short audio window. Wait for Stop
+note. The tray offers **Live Transcript** (latest final text, not interim captions),
+**Open Notes Folder**, and **Open Recovery Folder**. Choose **Stop Session** to flush the final short audio window. Wait for Stop
 to finish before Quit. If Stop reports that Whisper is still draining, wait and
 choose Stop again; capture has already stopped and its WAV is retained.
+If local transcription falls behind or fails, recording continues to the WAV;
+the tray marks the issue and journals known gaps. **Retry Pending AI** explicitly
+retries only unfinished note-structuring tasks.
 
 Notes go to `notes/YYYY-MM-DD_<title>.md`; repeated titles receive a suffix rather
 than overwriting earlier notes. The same unique session ID names the Markdown,
@@ -39,8 +43,11 @@ until you remove them yourself.
 ## Configuration
 
 Use `.env.example` as a reference; create/edit `.env` locally without replacing an
-existing secret file. Run from `latchnote-app/` because config/paths are relative
-to the working directory. Restart the process after changing settings.
+existing secret file. Run from `latchnote-app/` because config paths are relative
+to the working directory. Settings reload before each new session. Use `--config`
+to name one explicit settings file from another working directory; process
+environment values override that file. Updating `.env` while the tray is open
+takes effect at the next Start Session; changing the Whisper model reloads it then.
 
 ```dotenv
 LATCHNOTE_WHISPER_MODEL=base
@@ -72,8 +79,10 @@ The example URL is a placeholder, not a working provider. For Groq, the API base
 Start without `--raw-only` to use configured cleanup. That flag overrides AI config
 and guarantees Latchnote does not make notes-provider requests. Empty provider/model
 configuration means raw-only. Invalid optional settings fall back to raw-only with
-a warning instead of preventing capture. Native vendor APIs with different request
-formats, including Anthropic Messages, are **not** handled by this adapter.
+a warning instead of preventing capture. The tray shows **Transcript only** when
+AI is disabled or required settings are missing; warnings name the missing setting
+without exposing keys. Native vendor APIs with different request formats, including
+Anthropic Messages, are **not** handled by this adapter.
 
 The adapter sends **transcript text**, not recordings, about every 120 seconds of
 transcribed source audio and for the final remaining chunk. Provider usage may cost
@@ -148,7 +157,9 @@ Intel/AMD entry-level CPUs, ID/EN code-switching, browser/Zoom contention, RAM u
 Five-second windows give delayed final segments, **not word-by-word interim captions**.
 
 The worker has a bounded roughly 30-second backlog. If the CPU cannot keep up,
-the tray reports gaps and the full WAV is retained for `--transcribe-file` recovery.
+the tray reports the issue, the journal marks known skipped audio ranges, and the
+full WAV is retained for `--transcribe-file` recovery. Reprocessing creates a new
+recovered session; it does not merge into or overwrite the original transcript.
 Non-overlapping windows may split words at boundaries; overlap/stable partial decoding
 is deferred until quality tests justify it. Pending AI tasks remain in the session
 journal after the total shutdown deadline and can be retried explicitly. Real-device

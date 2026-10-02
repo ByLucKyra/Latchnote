@@ -52,6 +52,14 @@ def test_journal_middle_corruption_fails_closed(tmp_path) -> None:
         MarkdownWriter.rebuild(writer.journal_path)
 
 
+def test_recovery_gap_is_durable_and_visible_in_export(tmp_path) -> None:
+    writer = MarkdownWriter(tmp_path, Session("Course", started_at=datetime(2026, 10, 2, 9)))
+    writer.append_recovery_gap(12, 17, "Whisper queue was full")
+    content = writer.path.read_text(encoding="utf-8")
+    assert "Transcript gap to [00:00:17]" in content
+    assert "Reprocess the retained WAV separately" in content
+
+
 def test_failed_windows_replace_keeps_previous_export(tmp_path, monkeypatch) -> None:
     writer = MarkdownWriter(tmp_path, Session("Course", started_at=datetime(2026, 10, 2, 9)))
     writer.append_transcript("keep old export", "00:00:01")

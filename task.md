@@ -41,6 +41,7 @@ Updated 2 October 2026: local Whisper raw notes first (8 GB entry-level CPU targ
 - [x] Write final transcript segments to Markdown as they arrive.
 - [x] Enable multilingual language detection; actual ID/EN accuracy still requires validation.
 - [x] Bound live backlog, report transcription errors/gaps, and retain recovery audio.
+- [x] Show known dropped audio ranges in the journal and provide separate WAV reprocessing.
 - [ ] Test with a 30-minute mixed-language course recording.
 
 **Done when:** browser audio becomes timestamped Markdown transcript with a maximum practical delay of 10 seconds.
@@ -75,6 +76,7 @@ Updated 2 October 2026: local Whisper raw notes first (8 GB entry-level CPU targ
 - [x] Show clear state: idle, recording, retrying, or error.
 - [x] Prevent a second session from starting while one is active.
 - [x] Stop safely on exit and retain recoverable data.
+- [x] Add a latest-final preview, notes/recovery folder actions, and explicit pending-AI retry.
 
 **Done when:** a non-technical user can run a full session without using the terminal.
 

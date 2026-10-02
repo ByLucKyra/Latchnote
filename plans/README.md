@@ -64,7 +64,7 @@ Path Python di tabel relatif ke `latchnote-app/src/latchnote/`; path frontend re
 |---|---|---|---|---|---|
 | [001](001-streaming-lifecycle.md) | STT Deepgram start/finalize/stop | P0 | M | Tidak ada | REJECTED: diganti trial Whisper lokal; lihat README desktop |
 | [002](002-storage-and-structuring.md) | Sesi unik, recovery durable, Markdown kronologis, AI worker terkendali | P0/P1 | L | Trial Whisper lokal | DONE: 23 tes automated-verified; provider nyata dan sesi hardware belum diuji |
-| [003](003-recovery-and-desktop-ux.md) | Error/backlog terlihat, recovery usable, partial transcript dan setup | P1 | L | Trial Whisper lokal, 002 | TODO: rekonsiliasi STT lokal dahulu |
+| [003](003-recovery-and-desktop-ux.md) | Error/backlog terlihat, recovery usable, transcript preview dan setup | P1 | L | Trial Whisper lokal, 002 | IN PROGRESS: config/recovery/tray automated; interim captions dan hardware smoke belum |
 | [004](004-waitlist-readiness.md) | Landing page jujur, accessible, waitlist terverifikasi | P1/P2 | M | Independen untuk copy/UI; klaim fitur menunggu 003 | TODO |
 | [005](005-validation-and-release.md) | Bukti tiga pengguna dan release checklist; keputusan pricing berbasis biaya | P1 | L | 001–003; 004 untuk distribusi waitlist | TODO |
 

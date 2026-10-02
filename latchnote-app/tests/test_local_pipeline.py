@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import os
+from pathlib import Path
 from threading import Event
 from types import SimpleNamespace
 from wave import open as open_wave
@@ -68,6 +70,10 @@ def test_queue_overflow_reports_gap_and_preserves_audio_offsets() -> None:
     assert client._queue.get()[0] == 0
     client._enqueue(b"\0\0" * 8)
     assert client._queue.get()[0] == 2
+    gaps = client.pending_gaps()
+    assert gaps == [(1, 2)]
+    client.acknowledge_gap(gaps[0])
+    assert client.pending_gaps() == []
 
 
 def test_raw_only_has_no_structuring_requests_and_files_do_not_overwrite(tmp_path) -> None:
@@ -128,6 +134,60 @@ def test_endpoint_validation_and_cpu_setting_boundaries(tmp_path, monkeypatch) -
         load_settings()
 
 
+def test_explicit_config_reloads_without_mutating_environment(tmp_path, monkeypatch) -> None:
+    config = tmp_path / "settings.env"
+    config.write_text("LATCHNOTE_NOTES_DIR=first\nNOTES_AI_API_KEY=file-key\n", encoding="utf-8")
+    monkeypatch.delenv("LATCHNOTE_NOTES_DIR", raising=False)
+    other_cwd = tmp_path / "elsewhere"
+    other_cwd.mkdir()
+    monkeypatch.chdir(other_cwd)
+    monkeypatch.setenv("NOTES_AI_API_KEY", "process-key")
+
+    first = load_settings(config)
+    config.write_text("LATCHNOTE_NOTES_DIR=second\nNOTES_AI_API_KEY=new-file-key\n", encoding="utf-8")
+    second = load_settings(config)
+    assert first.notes_dir == Path("first") and second.notes_dir == Path("second")
+    assert first.notes_ai_api_key == second.notes_ai_api_key == "process-key"
+    assert "LATCHNOTE_NOTES_DIR" not in os.environ
+
+
+def test_idle_hotkey_does_not_open_discarded_note() -> None:
+    from latchnote.__main__ import _request_micro_note_if_active
+
+    called = []
+    _request_micro_note_if_active(SimpleNamespace(can_stop=False), lambda: called.append(True))
+    assert called == []
+
+
+def test_tray_labels_local_recording_errors_without_hiding_stop() -> None:
+    from latchnote.__main__ import TrayApplication
+    from latchnote.session import SessionStatus
+
+    controller = SimpleNamespace(can_stop=True, status=SessionStatus.ERROR, mode_message="Transcript only")
+    assert TrayApplication._status_text(SimpleNamespace(_controller=controller)) == "Recording (transcription issue; WAV is being saved)"
+
+
+def test_explicit_pending_retry_uses_local_worker_and_finishes_journal(tmp_path, monkeypatch) -> None:
+    from latchnote import __main__
+    from latchnote.config import Settings
+    from latchnote.session import SessionStatus
+
+    session = Session("Pending retry", started_at=datetime(2026, 10, 2, 9))
+    writer = MarkdownWriter(tmp_path, session)
+    writer.append_transcript("source", "00:00:02")
+    writer.add_pending_task("pending-1", "source", "00:00:02")
+    settings = Settings(tmp_path, tmp_path, notes_ai_base_url="https://provider.example/v1", notes_ai_model="model")
+    controller = __main__.SessionController(settings, "Retry", raw_only=False)
+    monkeypatch.setattr(__main__, "_notes_structurer", lambda *_: SimpleNamespace(structure=lambda text: f"- {text}"))
+
+    controller.retry_pending_tasks()
+    assert controller._retry_thread is not None
+    controller._retry_thread.join(timeout=2)
+    assert not controller._retry_thread.is_alive()
+    assert controller.status is SessionStatus.STOPPED
+    assert MarkdownWriter.resume(writer.journal_path).pending_tasks() == []
+
+
 def test_provider_timeout_is_retryable_without_logging_key(monkeypatch) -> None:
     def fail(*args, **kwargs):
         raise httpx.ReadTimeout("sensitive-request-details")
@@ -157,7 +217,7 @@ def test_audio_stop_never_holds_callback_lock(tmp_path) -> None:
     capture.stop()
 
 
-def test_raw_only_and_invalid_ai_configuration_do_not_create_provider_client(tmp_path) -> None:
+def test_raw_only_and_invalid_ai_configuration_do_not_create_provider_client(tmp_path, caplog) -> None:
     from latchnote.__main__ import _notes_structurer
     from latchnote.config import Settings
 
@@ -165,6 +225,7 @@ def test_raw_only_and_invalid_ai_configuration_do_not_create_provider_client(tmp
     assert _notes_structurer(configured, True) is None
     invalid = Settings(tmp_path, tmp_path, notes_ai_base_url="http://remote.example/v1")
     assert _notes_structurer(invalid, False) is None
+    assert "NOTES_AI_MODEL" in caplog.text
 
 
 def test_controller_stops_capture_before_decoder_and_keeps_timeout_retryable(tmp_path) -> None:
@@ -180,7 +241,7 @@ def test_controller_stops_capture_before_decoder_and_keeps_timeout_retryable(tmp
         events.append("decoder")
         raise SttError("still draining")
 
-    controller._stt = SimpleNamespace(stop=timeout, last_error=None)
+    controller._stt = SimpleNamespace(stop=timeout, last_error=None, pending_gaps=lambda: [])
     controller._orchestrator = SimpleNamespace(finish=lambda **kwargs: events.append("notes") or True)
     controller.stop_session()
     assert events == ["capture", "decoder"]

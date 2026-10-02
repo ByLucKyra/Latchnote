@@ -2,6 +2,7 @@
 
 import json
 import logging
+import math
 import re
 import tempfile
 import uuid
@@ -45,7 +46,8 @@ def read_journal(path: Path) -> list[dict[str, object]]:
                     or not isinstance(event.get("sequence"), int)
                     or event.get("sequence", 0) < 1
                     or not all(isinstance(event.get(key), str) for key in ("session_id", "event_id", "type", "timestamp", "text"))
-                    or event.get("type") not in {"session", "session_metadata", "session_end", "transcript", "manual", "structured", "task_pending", "task_success"}
+                    or _parse_seconds(event.get("timestamp", "")) < 0
+                    or event.get("type") not in {"session", "session_metadata", "session_end", "transcript", "manual", "recovery_gap", "structured", "task_pending", "task_success"}
                 ):
                     raise ValueError("unsupported journal event")
                 kind = event["type"]
@@ -57,6 +59,12 @@ def read_journal(path: Path) -> list[dict[str, object]]:
                     raise ValueError("invalid task event")
                 if kind == "session_end" and (not isinstance(event.get("complete"), bool) or not isinstance(event.get("duration_seconds"), int)):
                     raise ValueError("invalid session end")
+                if kind == "recovery_gap" and (
+                    not isinstance(event.get("end_seconds"), (int, float))
+                    or not math.isfinite(event["end_seconds"])
+                    or event["end_seconds"] < _parse_seconds(event["timestamp"])
+                ):
+                    raise ValueError("invalid recovery gap")
                 if session_id is not None and event["session_id"] != session_id:
                     raise ValueError("multiple sessions in journal")
                 if int(event["sequence"]) <= sequence:
@@ -95,7 +103,7 @@ def _render(events: list[dict[str, object]]) -> str:
         event.get("task_id"): event for event in events
         if event["type"] == "structured" and event.get("task_id") in successful
     }
-    rendered = [event for event in events if event["type"] in {"transcript", "manual"}]
+    rendered = [event for event in events if event["type"] in {"transcript", "manual", "recovery_gap"}]
     rendered.extend(latest_structured.values())
     for event in sorted(rendered, key=lambda item: (str(item["timestamp"]), int(item["sequence"]))):
         timestamp, text = event["timestamp"], str(event["text"]).strip()
@@ -103,6 +111,9 @@ def _render(events: list[dict[str, object]]) -> str:
             body = text
         elif event["type"] == "manual":
             body = f"📌 **{text}**"
+        elif event["type"] == "recovery_gap":
+            end_time = _format_seconds(float(event["end_seconds"]))
+            body = f"> Transcript gap to [{end_time}]: {text}. Reprocess the retained WAV separately; recovered text is not merged automatically."
         else:
             body = f"### Structured notes\n\n{text}"
         output.append(f"\n## [{timestamp}]\n\n{body}\n")
@@ -172,6 +183,11 @@ class MarkdownWriter:
     def append_manual_note(self, text: str, timestamp: str) -> None:
         """Persist one personal micro-note."""
         self._record("manual", timestamp, text)
+        self._write_export()
+
+    def append_recovery_gap(self, start_seconds: float, end_seconds: float, reason: str) -> None:
+        """Journal a known source range that Whisper could not transcribe."""
+        self._record("recovery_gap", _format_seconds(start_seconds), reason, end_seconds=end_seconds)
         self._write_export()
 
     def add_pending_task(self, task_id: str, text: str, timestamp: str) -> None:
@@ -267,3 +283,19 @@ class MarkdownWriter:
                 temporary.unlink(missing_ok=True)
             raise JournalError("Unable to rebuild Markdown export; journal retained.") from error
         return output
+
+
+def _format_seconds(seconds: float) -> str:
+    hours, remainder = divmod(max(0, int(seconds)), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{hours:02}:{minutes:02}:{seconds:02}"
+
+
+def _parse_seconds(timestamp: str) -> int:
+    parts = timestamp.split(":")
+    if len(parts) != 3 or not all(part.isdigit() for part in parts):
+        raise ValueError("invalid source timestamp")
+    hours, minutes, seconds = (int(part) for part in parts)
+    if minutes > 59 or seconds > 59:
+        raise ValueError("invalid source timestamp")
+    return hours * 3600 + minutes * 60 + seconds
