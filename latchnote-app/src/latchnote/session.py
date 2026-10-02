@@ -1,14 +1,17 @@
 """Recording-session data and transcript chunk orchestration."""
 
 import logging
+import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from queue import Queue
 from threading import Lock, Thread
+from time import monotonic
 
 from .structurer import StructuringError
-from .writer import MarkdownWriter
+from .writer import JournalError, MarkdownWriter
 
 LOGGER = logging.getLogger(__name__)
 StructureChunk = Callable[[str], str]
@@ -92,15 +95,21 @@ class SessionOrchestrator:
         self._structure_chunk = structure_chunk
         self._chunker = TranscriptChunker(chunk_seconds)
         self._failed_chunks: list[TranscriptChunk] = []
-        self._threads: list[Thread] = []
         self._lock = Lock()
+        self._chunk_lock = Lock()
+        self._queue: Queue[tuple[str, TranscriptChunk] | None] = Queue()
+        self._queued: set[str] = set()
+        self._worker = Thread(target=self._run_worker, name="notes-structurer", daemon=True) if structure_chunk else None
+        if self._worker:
+            self._worker.start()
 
     def add_final_transcript(self, text: str, at: datetime | None = None) -> None:
         """Persist a final transcript segment and schedule its completed chunk."""
         recorded_at = at or datetime.now()
         elapsed_seconds = max(0, int((recorded_at - self._session.started_at).total_seconds()))
         self._writer.append_transcript(text, self._session.timestamp(recorded_at))
-        chunk = self._chunker.add(text, elapsed_seconds) if self._structure_chunk else None
+        with self._chunk_lock:
+            chunk = self._chunker.add(text, elapsed_seconds) if self._structure_chunk else None
         if chunk is not None:
             self._schedule(chunk)
 
@@ -109,46 +118,89 @@ class SessionOrchestrator:
         recorded_at = at or datetime.now()
         self._writer.append_manual_note(text, self._session.timestamp(recorded_at))
 
-    def finish(self, at: datetime | None = None) -> None:
-        """Schedule the final partial chunk and wait briefly for active requests."""
+    def finish(self, at: datetime | None = None, timeout: float = 10, source_success: bool = True) -> bool:
+        """Drain provider work by a total deadline and report unfinished tasks."""
+        deadline = monotonic() + timeout
         recorded_at = at or datetime.now()
         elapsed_seconds = max(0, int((recorded_at - self._session.started_at).total_seconds()))
-        chunk = self._chunker.flush(elapsed_seconds)
+        with self._chunk_lock:
+            chunk = self._chunker.flush(elapsed_seconds)
         if chunk is not None:
             self._schedule(chunk)
-        self.wait_for_structuring()
+        self.wait_for_structuring(max(0, deadline - monotonic()))
+        if self._worker and self._worker.is_alive():
+            self._queue.put(None)
+            self._worker.join(timeout=max(0, deadline - monotonic()))
+        complete = source_success and not self._writer.pending_tasks()
+        duration = max(0, int((recorded_at - self._session.started_at).total_seconds()))
+        self._writer.finish_session(duration, complete)
+        return complete
 
     def retry_failed(self) -> None:
-        """Retry chunks whose raw transcript was preserved after a Claude failure."""
-        with self._lock:
-            failed_chunks, self._failed_chunks = self._failed_chunks, []
-        for chunk in failed_chunks:
-            self._schedule(chunk)
+        """Retry provider tasks that remain pending in the session journal."""
+        self.retry_pending()
+
+    def retry_pending(self) -> None:
+        """Requeue durable provider tasks without duplicating completed output."""
+        if not self._worker or not self._worker.is_alive():
+            return
+        for task in self._writer.pending_tasks():
+            chunk = TranscriptChunk(self._parse_timestamp(str(task["timestamp"])), str(task["text"]))
+            task_id = str(task["task_id"])
+            with self._lock:
+                if task_id in self._queued:
+                    continue
+                self._queued.add(task_id)
+            self._queue.put((task_id, chunk))
 
     def wait_for_structuring(self, timeout: float = 10) -> None:
         """Wait up to ``timeout`` seconds for outstanding structuring requests."""
-        with self._lock:
-            threads, self._threads = self._threads, []
-        for thread in threads:
-            thread.join(timeout=timeout)
+        deadline = monotonic() + timeout
+        with self._queue.all_tasks_done:
+            while self._queue.unfinished_tasks:
+                remaining = deadline - monotonic()
+                if remaining <= 0:
+                    return
+                self._queue.all_tasks_done.wait(remaining)
 
     def _schedule(self, chunk: TranscriptChunk) -> None:
-        thread = Thread(target=self._structure, args=(chunk,), daemon=True)
-        with self._lock:
-            self._threads.append(thread)
-        thread.start()
-
-    def _structure(self, chunk: TranscriptChunk) -> None:
-        try:
-            bullets = self._structure_chunk(chunk.text)
-        except StructuringError as error:
+        task_id = hashlib.sha256(f"{self._writer.session_id}\0{chunk.start_seconds}\0{chunk.text}".encode()).hexdigest()
+        timestamp = self._format_seconds(chunk.start_seconds)
+        self._writer.add_pending_task(task_id, chunk.text, timestamp)
+        if self._worker:
             with self._lock:
-                self._failed_chunks.append(chunk)
-            LOGGER.warning("Structured notes deferred: %s", error)
-            return
-        self._writer.append_structured_notes(
-            bullets, self._format_seconds(chunk.start_seconds)
-        )
+                if task_id in self._queued:
+                    return
+                self._queued.add(task_id)
+            self._queue.put((task_id, chunk))
+
+    def _run_worker(self) -> None:
+        while True:
+            task = self._queue.get()
+            try:
+                if task is None:
+                    return
+                task_id, chunk = task
+                try:
+                    bullets = self._structure_chunk(chunk.text)
+                except StructuringError as error:
+                    with self._lock:
+                        self._failed_chunks.append(chunk)
+                    LOGGER.warning("Structured notes deferred: %s", error)
+                    continue
+                self._writer.complete_task(task_id, bullets, self._format_seconds(chunk.start_seconds))
+            except (JournalError, OSError) as error:
+                LOGGER.error("Structured notes remain pending: %s", error)
+            finally:
+                if task is not None:
+                    with self._lock:
+                        self._queued.discard(task[0])
+                self._queue.task_done()
+
+    @staticmethod
+    def _parse_timestamp(timestamp: str) -> int:
+        hours, minutes, seconds = (int(part) for part in timestamp.split(":"))
+        return hours * 3600 + minutes * 60 + seconds
 
     @staticmethod
     def _format_seconds(elapsed_seconds: int) -> str:

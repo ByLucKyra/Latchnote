@@ -141,9 +141,10 @@ A close competitor identified during market research, not previously scoped:
 
 ### 9.5 Output & Storage
 - Write notes to a local `.md` file per session.
-- File name includes date + session title.
+- File name includes date + session title; collisions receive a suffix and never overwrite an earlier session. The same session ID names its WAV and JSONL recovery journal.
 - AI-structured notes and manual micro-notes appear interleaved in chronological order.
 - Use `[HH:MM:SS]` relative timestamps; AI notes use the chunk start time and manual notes use the hotkey submission time.
+- Keep an append-only local event journal as the recovery source; Markdown can be rebuilt in stable timestamp/sequence order. Mark incomplete sessions and pending AI work, with session duration.
 - Output is plain Markdown, readable in Obsidian, Notion, or any text editor without conversion.
 - Audio transcription stays local. Transcript text may be sent to a configured third-party AI provider only when optional cleanup is enabled; final notes remain local and MVP has no cloud sync.
 

@@ -52,8 +52,9 @@ Updated 2 October 2026: local Whisper raw notes first (8 GB entry-level CPU targ
 - [x] Support a UTF-8 custom formatting file without replacing the raw transcript or standard rules.
 - [x] Append structured bullets at the chunk start timestamp.
 - [x] Preserve raw transcript if structuring fails; disabled AI schedules no requests.
-- [ ] Persist failed tasks and expose retry after restart; current failed-chunk list is in memory only.
-- [ ] Verify custom/default formats with a real provider; enforce chronological final export.
+- [x] Persist pending AI tasks in the session journal and expose explicit `--retry-pending` recovery.
+- [x] Keep a stable chronological export and rebuild it from the versioned journal; show incomplete status and duration.
+- [ ] Verify custom/default formats with a real provider.
 - [x] Add a small check proving chunks are not sent twice.
 
 **Done when:** one completed session produces chronological, structured Markdown notes without invented content.

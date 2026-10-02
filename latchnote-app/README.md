@@ -29,9 +29,12 @@ to finish before Quit. If Stop reports that Whisper is still draining, wait and
 choose Stop again; capture has already stopped and its WAV is retained.
 
 Notes go to `notes/YYYY-MM-DD_<title>.md`; repeated titles receive a suffix rather
-than overwriting earlier notes. Recovery WAVs go to `data/` with unique timestamps.
-This captures system output, not your microphone. Other sounds on that device can
-also be captured. Files are retained until you remove them yourself.
+than overwriting earlier notes. The same unique session ID names the Markdown,
+JSONL recovery journal, and WAV in `data/`. The journal is the source of truth;
+Markdown events sort by source timestamp and stable sequence. It records incomplete
+AI work and the measured session duration. This captures system output, not your
+microphone. Other sounds on that device can also be captured. Files are retained
+until you remove them yourself.
 
 ## Configuration
 
@@ -106,6 +109,23 @@ merge into or overwrite an existing session. It can also process a user-supplied
 audio file supported by PyAV. Remove `--raw-only` to request configured cleanup.
 Do not treat repeated AI attempts as free: requests may be billed again.
 
+Rebuild a damaged or missing Markdown export from its journal:
+
+```powershell
+.\.venv\Scripts\python.exe -m latchnote --rebuild-notes "notes/2026-10-02_My course.jsonl"
+```
+
+Retry durable AI tasks only when you explicitly choose to make provider requests:
+
+```powershell
+.\.venv\Scripts\python.exe -m latchnote --retry-pending "notes/2026-10-02_My course.jsonl"
+```
+
+These commands do not need network access for rebuild; retry requires valid
+`NOTES_AI_*` settings. A crash between a provider response and its journaled
+success can cause that chunk to be requested again. The journal flushes each event,
+but does not promise survival of sudden power loss or failing storage hardware.
+
 ## Checks and limits
 
 ```powershell
@@ -130,7 +150,6 @@ Five-second windows give delayed final segments, **not word-by-word interim capt
 The worker has a bounded roughly 30-second backlog. If the CPU cannot keep up,
 the tray reports gaps and the full WAV is retained for `--transcribe-file` recovery.
 Non-overlapping windows may split words at boundaries; overlap/stable partial decoding
-is deferred until quality tests justify it. AI output currently appends in completion
-order, failed tasks are not persisted across restart, and AI workers may outlive the
-brief shutdown wait. Raw notes/WAV are the recovery source; sorted durable structured
-export remains follow-up work in `plans/002-storage-and-structuring.md`.
+is deferred until quality tests justify it. Pending AI tasks remain in the session
+journal after the total shutdown deadline and can be retried explicitly. Real-device
+Windows open-file behavior and long-session durability still need manual validation.

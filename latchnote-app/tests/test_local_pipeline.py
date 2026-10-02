@@ -80,7 +80,7 @@ def test_raw_only_has_no_structuring_requests_and_files_do_not_overwrite(tmp_pat
     second = MarkdownWriter(tmp_path, session)
     assert second.path != first.path and first.path.read_bytes() == original
     assert "raw text" in original.decode() and "Structured notes" not in original.decode()
-    assert orchestrator._threads == []
+    assert orchestrator._worker is None
 
 
 def test_custom_format_keeps_standard_rules_and_provider_payload(tmp_path, monkeypatch) -> None:
@@ -181,7 +181,7 @@ def test_controller_stops_capture_before_decoder_and_keeps_timeout_retryable(tmp
         raise SttError("still draining")
 
     controller._stt = SimpleNamespace(stop=timeout, last_error=None)
-    controller._orchestrator = SimpleNamespace(finish=lambda: events.append("notes"))
+    controller._orchestrator = SimpleNamespace(finish=lambda **kwargs: events.append("notes") or True)
     controller.stop_session()
     assert events == ["capture", "decoder"]
     assert controller.can_stop and not controller.can_start

@@ -18,7 +18,7 @@ from .hotkey_listener import GlobalHotkeyListener, HotkeyError, MicroNoteControl
 from .session import Session, SessionOrchestrator, SessionStatus
 from .structurer import NotesStructurer
 from .stt_client import LocalWhisperSttClient, SttError, load_whisper_model, transcribe_audio
-from .writer import MarkdownWriter
+from .writer import JournalError, MarkdownWriter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,7 +72,7 @@ class SessionController:
         try:
             writer = MarkdownWriter(self.settings.notes_dir, session)
             orchestrator = SessionOrchestrator(session, writer, structurer.structure if structurer else None)
-            capture.start(f"{session.started_at:%Y%m%d-%H%M%S-%f}", paused=True)
+            capture.start(writer.session_id, paused=True)
             self._capture = capture
             self._orchestrator = orchestrator
             if capture.format is None:
@@ -88,7 +88,7 @@ class SessionController:
             )
             stt.start()
             capture.set_chunk_handler(stt.submit_audio)
-        except (AudioCaptureError, SttError, OSError) as error:
+        except (AudioCaptureError, SttError, JournalError, OSError) as error:
             capture.stop()
             if stt is not None:
                 stt.stop()
@@ -111,12 +111,16 @@ class SessionController:
                 self._capture.stop()
             if self._stt is not None:
                 self._stt.stop()
+            stt_error = self._stt.last_error if self._stt else None
+            notes_complete = True
             if self._orchestrator is not None:
-                self._orchestrator.finish()
-        except (AudioCaptureError, SttError, OSError) as error:
+                notes_complete = self._orchestrator.finish(source_success=not stt_error)
+        except (AudioCaptureError, SttError, JournalError, OSError) as error:
             self._set_error(str(error))
             return
-        error = self._stt.last_error if self._stt else None
+        error = stt_error
+        if not error and not notes_complete:
+            error = "AI notes remain pending; use --retry-pending with the session journal to retry them."
         self._capture = None
         self._stt = None
         self._orchestrator = None
@@ -216,6 +220,9 @@ def main() -> int:
     parser.add_argument("--title", default="Study session", help="Default title for a session")
     parser.add_argument("--download-model", action="store_true", help="Download/cache the configured local Whisper model")
     parser.add_argument("--transcribe-file", type=Path, help="Transcribe saved audio locally, without recording")
+    recovery = parser.add_mutually_exclusive_group()
+    recovery.add_argument("--rebuild-notes", type=Path, help="Rebuild Markdown from a session .jsonl journal")
+    recovery.add_argument("--retry-pending", type=Path, help="Retry pending AI tasks from a session .jsonl journal")
     parser.add_argument("--raw-only", action="store_true", help="Disable all AI provider requests")
     args = parser.parse_args()
 
@@ -223,6 +230,23 @@ def main() -> int:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     try:
         settings = load_settings()
+        if args.rebuild_notes:
+            LOGGER.info("Rebuilt %s", MarkdownWriter.rebuild(args.rebuild_notes))
+            return 0
+        if args.retry_pending:
+            writer = MarkdownWriter.resume(args.retry_pending)
+            structurer = _notes_structurer(settings, args.raw_only)
+            if structurer is None:
+                raise RuntimeError("Pending AI retry requires valid NOTES_AI_* configuration and must not use --raw-only.")
+            orchestrator = SessionOrchestrator(writer.session, writer, structurer.structure)
+            orchestrator.retry_pending()
+            orchestrator.finish()
+            pending = writer.pending_tasks()
+            if pending:
+                LOGGER.error("%d AI task(s) remain pending; journal and raw transcript are retained.", len(pending))
+                return 1
+            LOGGER.info("Pending AI tasks completed and notes rebuilt: %s", writer.path)
+            return 0
         if args.download_model or args.transcribe_file:
             started = monotonic()
             model = load_whisper_model(

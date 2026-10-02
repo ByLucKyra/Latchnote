@@ -32,7 +32,7 @@ audio_capture.py  →  stt_client.py  →  session.py  →  structurer.py  →  
 - **`stt_client.py`** — Local Whisper worker, emits source-timestamped final transcript windows
 - **`session.py`** — Orchestrates a recording session: accumulates transcript chunks, triggers structuring every ~2-3 min, interleaves micro-notes
 - **`structurer.py`** — Sends text chunks to optional provider with standard factual rules plus custom presentation instructions
-- **`writer.py`** — Appends structured notes + micro-notes to the session `.md` file chronologically
+- **`writer.py`** — Journals session events durably and maintains a chronological `.md` export
 - **`hotkey_listener.py`** — Global hotkey (`Ctrl+Space`), floating input popup (PySide6), emits timestamped micro-notes back to session
 - **`__main__.py`** — Entry point, tray app, explicit model download and saved-audio CLI
 
@@ -75,7 +75,7 @@ Raw transcript text as spoken.
 ```
 
 - Micro-notes are prefixed with `📌` and bold text — visually distinct from AI bullets.
-- Event headers use `[HH:MM:SS]`; AI uses chunk start time and manual notes use submit time. Chronological final export remains a requirement, not a completed capability of the current append-only trial.
+- Event headers use `[HH:MM:SS]`; AI uses chunk start time and manual notes use submit time. A same-ID JSONL journal is authoritative; rebuild sorts by `(timestamp, sequence)`. Incomplete sessions show status and duration, and unfinished AI tasks remain retryable.
 - No HTML, no proprietary formatting. Must render cleanly in Obsidian, Notion, and any plaintext editor.
 
 ## LLM Structuring Rules
@@ -107,7 +107,7 @@ These are explicitly out of scope per the PRD. Do not implement or scaffold for:
 
 ## File Naming
 
-- Session output: `YYYY-MM-DD_<session-title>.md` in a `notes/` directory (user-configurable).
+- Session output: `YYYY-MM-DD_<session-title>[suffix].md` plus same-ID `.jsonl`; the WAV uses that ID too. Collisions use exclusive creation and a suffix.
 - Source code: `snake_case.py`, no abbreviations.
 - Test files: `test_<module>.py` mirroring the source module.
 

@@ -1,6 +1,6 @@
 # Plan 002: Simpan sesi aman, durable, dan kronologis
 
-Status TODO. Prioritas P0/P1. Effort L. Risiko HIGH karena jalur penyimpanan. Kategori bug/reliability. Dependensi 001. Planned at `37c7332`, 2 Oktober 2026.
+Status DONE (automated-verified; 23 tests pass). Uji provider nyata dan sesi hardware tetap manual. Prioritas P0/P1 historis. Planned at `37c7332`, 2 Oktober 2026.
 
 ## Tujuan
 
@@ -48,12 +48,12 @@ Perintah tes semua: `& .\latchnote-app\.venv\Scripts\python.exe -m pytest -q lat
 
 ## Done criteria
 
-- [ ] Collision/check Windows naming lulus; file lama tidak berubah.
-- [ ] Restart/rebuild dan pending retry tests lulus; export monotonik berdasarkan timestamp sumber.
-- [ ] Artefak task dan journal dapat dibaca tanpa key atau jaringan; raw text tidak hilang pada failure AI.
-- [ ] Duplicate successful retry tidak menggandakan output; queue/thread count tidak bertambah per chunk.
-- [ ] Shutdown mempunyai deadline total; pekerjaan belum selesai ditandai dan disimpan.
-- [ ] Kriteria live/final output tertulis konsisten; status index diperbarui.
+- [x] Collision/check Windows naming lulus; file lama tidak berubah.
+- [x] Resume/rebuild dan pending retry tests lulus; export monotonik berdasarkan timestamp sumber.
+- [x] Artefak task dan journal dapat dibaca tanpa key atau jaringan; raw text tidak hilang pada failure AI.
+- [x] Duplicate successful retry tidak menggandakan output; satu worker menangani semua chunk.
+- [x] Shutdown mempunyai deadline total; pekerjaan belum selesai ditandai dan disimpan.
+- [x] Kriteria output tertulis konsisten; status index diperbarui.
 
 ## STOP conditions dan maintenance
 
