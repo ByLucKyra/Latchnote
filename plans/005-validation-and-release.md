@@ -1,6 +1,6 @@
     # Plan 005: Validasi MVP dan putuskan kesiapan early access
 
-Status TODO. Prioritas P1. Effort L, bergantung waktu penguji. Risiko LOW untuk dokumentasi, MED untuk sesi berbayar nyata. Kategori tests/docs/direction. Dependensi 001–003; 004 diperlukan untuk waitlist publik. Planned at `37c7332`, 2 Oktober 2026.
+Status IN PROGRESS. Prioritas P1. Effort L, bergantung waktu penguji. Risiko LOW untuk dokumentasi, MED untuk sesi berbayar nyata. Kategori tests/docs/direction. Dependensi 001–003; 004 diperlukan untuk waitlist publik. Planned at `37c7332`, 2 Oktober 2026.
 
 ## Tujuan dan current state
 
@@ -77,7 +77,7 @@ Catat per sesi durasi audio, token/request AI sukses dan retry, kredit/provider 
 
 ## Done criteria dan keputusan akhir
 
-- [ ] Regression suite dan build runtime sesuai lulus, hasil dicatat.
+- [x] Regression suite, dependency check, dan build runtime sesuai lulus; hasil lokal dicatat di `latchnote-app/VALIDATION.md`.
 - [ ] Smoke pendek dan collision check lulus.
 - [ ] Failure matrix selesai dengan bukti; pending/gap tidak dilabel complete.
 - [ ] Capture 30 menit dan mixed ID/EN 30 menit lulus.
@@ -87,6 +87,8 @@ Catat per sesi durasi audio, token/request AI sukses dan retry, kredit/provider 
 - [ ] PRD/task/rules/runbook konsisten; release verdict GO/NO-GO ditulis dengan blocker serta next owner/action.
 
 001–004 dapat DONE pada implementation gates masing-masing, tetapi 005 tidak DONE sampai sesi nyata selesai. NO-GO dengan bug belum diperbaiki bukan validasi MVP sukses; catat task validasi yang selesai dan pekerjaan yang masih wajib. Jangan menghapus requirement supaya status terlihat hijau.
+
+Eksekusi lokal 4 Oktober 2026 pada `badf1f5`: Python 3.12.10, Node 24.11.0; desktop pytest 28 passed, pip check bersih, Astro build membuat `/` dan `/id/`, semuanya exit 0. Ini hanya memverifikasi suite otomatis dan build. Sesi smoke audio, collision, failure/recovery matrix, tiga peserta, 30/60 menit, akurasi/latensi, provider nyata, dan mesin kedua berstatus NOT RUN; verdict distribusi NO-GO sampai bukti manual tersedia. Root README dan runbook diperbarui. Rincian serta owner/action ada di runbook.
 
 ## STOP conditions dan maintenance
 

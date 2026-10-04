@@ -2,7 +2,7 @@
 
 Scope: Windows MVP in `latchnote-app/`. The first usable slice is system audio → transcript → local Markdown. UI and AI structuring come after that path works.
 
-Updated 2 October 2026: local Whisper raw notes first (8 GB entry-level CPU target), optional provider-independent AI cleanup and user-customizable format. Checkboxes describe implementation; real-session acceptance remains open. See `latchnote-app/README.md` for the current trial and benchmark limitations.
+Updated 4 October 2026: local Whisper raw notes first (8 GB entry-level CPU target), optional provider-independent AI cleanup and user-customizable format. Automated regression passes (28 tests); checkboxes for real-session acceptance remain open. See `latchnote-app/README.md` and `latchnote-app/VALIDATION.md` for trial limits and recorded evidence.
 
 ## Milestone 0 — Decisions and Setup
 

@@ -1,5 +1,25 @@
 # MVP Validation Runbook
 
+## Execution record — 4 October 2026
+
+Baseline commit: `badf1f5`. Python 3.12.10, Node 24.11.0.
+
+| Check | Result | Scope |
+|---|---|---|
+| `python -m pytest -q` | PASS — 28 passed | Automated regression only; no hardware/audio quality claim |
+| `python -m pip check` | PASS — no broken requirements | Installed environment only; not a fresh-machine install |
+| `npm run build` | PASS — `/` and `/id/` generated | Static build only; no visual/browser interaction check |
+| 5–10 minute real-audio smoke / same-title collision | NOT RUN | Needs Windows playback session and manual artifact inspection |
+| Failure/recovery matrix | NOT RUN | No deliberate fault injection performed |
+| Three participants, 30/60-minute sessions, terms/latency/cost | NOT RUN | Needs participant consent, target hardware, and optional provider budget |
+| Second machine, Obsidian, fresh setup | NOT RUN | No second-device or editor verification performed |
+
+Release verdict: **NO-GO for early access**. Only automated local checks passed.
+Next owner/action: product owner schedules consenting participants and target
+Windows devices, sets a spend cap before any paid-provider test, then fills the
+tables below with anonymized evidence. Do not enter emails, API keys, or raw
+private lecture transcripts here.
+
 ## Before testing
 
 1. Use Python 3.12+ and install the project dependencies.

@@ -1,6 +1,6 @@
 # Rencana Pengembangan Latchnote
 
-Tanggal: **2 Oktober 2026 (Asia/Jakarta)**. Baseline: commit **`37c7332`**. Status: **planning, belum diimplementasikan**.
+Tanggal: **4 Oktober 2026 (Asia/Jakarta)**. Audit baseline: **`37c7332`**; eksekusi lokal terbaru: **`badf1f5`**. Status: **implementation berjalan; validasi manual belum selesai**.
 
 Dokumen ini merupakan rencana lanjutan berdasarkan audit kode dan dokumen lokal, bukan bukti bahwa perbaikan telah selesai. Dibuat menggunakan skill `improve`. Baca rencana terkait sepenuhnya sebelum implementasi.
 
@@ -30,6 +30,10 @@ Dokumen lama dipertahankan sebagai baseline. Saat implementasi terkait selesai, 
 | Runtime frontend | `node --version`: v20.20.2; package mengharuskan >=22.12.0 | Environment audit belum memenuhi minimum package; riwayat build lama bukan baseline baru |
 | Git | Working tree bersih saat audit dimulai, HEAD `37c7332` | Planning berangkat dari snapshot tersebut |
 | Tooling | Tidak ditemukan CI, root README, skrip lint/typecheck frontend | Verifikasi utama sekarang pytest desktop dan build frontend pada runtime yang sesuai |
+
+## Eksekusi lokal terbaru (4 Oktober 2026)
+
+Pada `badf1f5`, Python 3.12.10: `pytest -q` = 28 passed; `pip check` bersih. Node 24.11.0 memenuhi minimum landing page; `npm run build` menghasilkan `/` dan `/id/`. Ini pemeriksaan otomatis lokal, bukan sesi Windows/audio, benchmark, user testing, atau bukti rilis. Detail NOT RUN dan next action tercatat di `latchnote-app/VALIDATION.md` dan Plan 005.
 
 Nilai `.env` tidak dibaca atau disalin. Keberadaan credential valid, endpoint waitlist aktif, model Claude tersedia, deployment publik, dan akurasi bahasa belum dikonfirmasi.
 
@@ -66,7 +70,7 @@ Path Python di tabel relatif ke `latchnote-app/src/latchnote/`; path frontend re
 | [002](002-storage-and-structuring.md) | Sesi unik, recovery durable, Markdown kronologis, AI worker terkendali | P0/P1 | L | Trial Whisper lokal | DONE: 23 tes automated-verified; provider nyata dan sesi hardware belum diuji |
 | [003](003-recovery-and-desktop-ux.md) | Error/backlog terlihat, recovery usable, transcript preview dan setup | P1 | L | Trial Whisper lokal, 002 | IN PROGRESS: config/recovery/tray automated; interim captions dan hardware smoke belum |
 | [004](004-waitlist-readiness.md) | Landing page jujur, accessible, waitlist terverifikasi | P1/P2 | M | Independen untuk copy/UI; klaim fitur menunggu 003 | IN PROGRESS: copy, fallback, dokumentasi, build; browser check/domain/endpoint belum |
-| [005](005-validation-and-release.md) | Bukti tiga pengguna dan release checklist; keputusan pricing berbasis biaya | P1 | L | 001–003; 004 untuk distribusi waitlist | TODO |
+| [005](005-validation-and-release.md) | Bukti tiga pengguna dan release checklist; keputusan pricing berbasis biaya | P1 | L | 001–003; 004 untuk distribusi waitlist | IN PROGRESS: automated checks lulus; sesi nyata/peserta/device belum |
 
 Status yang diperbolehkan: TODO, IN PROGRESS, DONE, BLOCKED (sertakan sebab), REJECTED (sertakan alasan). Setelah perubahan arah, lanjutkan benchmark Whisper pada hardware target sebelum durability 002; jangan menjalankan plan Deepgram yang sudah ditolak. 004 boleh paralel selama copy tidak menjanjikan fitur yang belum lolos validasi.
 

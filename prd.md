@@ -6,9 +6,9 @@
 
 | | |
 |---|---|
-| **Status** | Draft — MVP |
+| **Status** | Draft — MVP validation in progress; not release-ready |
 | **Owner** | Lucky Ramadhan |
-| **Last updated** | October 2, 2026 |
+| **Last updated** | October 4, 2026 |
 | **Version** | 0.1 |
 
 ---
@@ -18,6 +18,8 @@
 Latchnote is a Windows desktop companion app that listens to system audio while the user watches an online course, transcribes it in real time, and organizes it into structured Markdown notes — without requiring the user to pause or manually type through the whole session. A global hotkey lets the user drop short, personal keyword notes at any moment, preserving the small amount of manual/motor engagement known to aid retention, without demanding full note-taking.
 
 **Current direction (October 2, 2026):** local multilingual Whisper for free raw transcription, targeting entry-level Intel/AMD Windows laptops with integrated graphics and 8 GB RAM. CPU-only performance and ID/EN quality are acceptance gates, not assumed capabilities. Optional AI cleanup uses a user-configured OpenAI-compatible provider, with Latchnote's standard factual rules and user-editable formatting preferences. Windows `.exe` distribution is the intended outcome; packaging has not been delivered yet. The current trial emits final text in short windows, not word-by-word interim captions.
+
+**Validation status (October 4, 2026):** automated desktop regression (28 tests), dependency consistency, and English/Indonesian landing-page build pass locally. Real audio sessions, target-device performance, user feedback, recovery fault matrix, and external-provider behavior remain unverified; see `latchnote-app/VALIDATION.md`. This is not an early-access release decision.
 
 ## 2. Problem
 
